@@ -1,0 +1,6 @@
+model: faze
+# do_collect: False
+name: faze
+camera_size: [1920, 1080]
+visualize_cal: True
+pose_estimator: eos

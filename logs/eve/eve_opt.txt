@@ -1,0 +1,25 @@
+----------------- Options ---------------
+                 backbone: resnet50                      
+                      cal: False                         
+          cal_weight_path: weights/calibration           
+         cal_weights_path: weights/calibration           
+                  cam_idx: 0                             
+              camera_size: [1920, 1080]                  
+          checkpoints_dir: ./logs                        
+                   config: configs/eve.yaml              	[default: None]
+             dataset_mode: aligned                       
+            display_patch: True                          
+               do_collect: False                         
+              do_finetune: False                         
+                        k: 9                             
+                       lr: 0.0001                        
+                    model: eve                           	[default: faze]
+                     name: eve                           	[default: gaze_estimation]
+                  netGaze: regressor                     
+                      ngf: 128                           	[default: 128]
+          parameters_path: weights/eve_face.ckpt         
+               patch_type: face                          	[default: faze]
+           pose_estimator: eos                           	[default: pnp]
+                     seed: None                          
+            visualize_cal: True                          	[default: False]
+----------------- End -------------------
