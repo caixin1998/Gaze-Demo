@@ -1,0 +1,26 @@
+----------------- Options ---------------
+                 backbone: resnet50                      
+                      cal: False                         
+          cal_weight_path: weights/calibration           
+         cal_weights_path: weights/calibration           
+                  cam_idx: [0, 2]                        	[default: [0]]
+              camera_size: [1920, 1080]                  
+          checkpoints_dir: ./logs                        
+                   config: None                          
+             dataset_mode: aligned                       
+            display_patch: True                          
+               do_collect: True                          	[default: False]
+              do_finetune: False                         
+                        k: 9                             
+                       lr: 0.0001                        
+     maml_parameters_path: weights/weights_maml          
+                    model: faze                          
+                     name: gaze_estimation               
+                  netGaze: regressor                     
+                      ngf: 128                           	[default: 128]
+               patch_type: faze                          
+           pose_estimator: pnp                           
+                     seed: None                          
+      ted_parameters_path: weights/weights_ted.pth.tar   
+            visualize_cal: False                         
+----------------- End -------------------

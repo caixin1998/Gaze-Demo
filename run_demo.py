@@ -26,22 +26,25 @@ from models import create_model
 
 opt = BaseOptions().parse() 
 
-
-cam_idx = opt.cam_idx
-cam_cap = cv.VideoCapture(cam_idx)
-cam_cap.set(cv.CAP_PROP_FRAME_WIDTH, opt.camera_size[0])
-cam_cap.set(cv.CAP_PROP_FRAME_HEIGHT, opt.camera_size[1])
+cam_indices, cam_caps, cam_calibs = [], [], []
+for i,cam_idx in enumerate(opt.cam_idx):
+    cam_indices += [cam_idx]
+    cam_caps += [cv.VideoCapture(cam_idx)]
+    cam_caps[i].set(cv.CAP_PROP_FRAME_WIDTH, opt.camera_size[0])
+    cam_caps[i].set(cv.CAP_PROP_FRAME_HEIGHT, opt.camera_size[1])
 
 # calibrate camera
-cam_calib = {'mtx': np.eye(3), 'dist': np.zeros((1, 5))}
+    cam_calib = {'mtx': np.eye(3), 'dist': np.zeros((1, 5))}
 
-if path.exists("calib_cam%d_%d.pkl" % (cam_idx, opt.camera_size[0])):
-    cam_calib = pickle.load(open("calib_cam%d_%d.pkl" % (cam_idx, opt.camera_size[0]), "rb"))
-    print('cam_calib:', cam_calib)
-else:
-    print("Calibrate camera once. Print pattern.png, paste on a clipboard, show to camera and capture non-blurry images in which points are detected well.")
-    print("Press s to save frame, c to continue, q to quit")
-    cam_calibrate(cam_idx, cam_cap, cam_calib)
+    if path.exists("calib_cam%d_%d.pkl" % (cam_idx, opt.camera_size[0])):
+        cam_calib = pickle.load(open("calib_cam%d_%d.pkl" % (cam_idx, opt.camera_size[0]), "rb"))
+        print('cam_calib:', cam_calib)
+    else:
+        print("Calibrate camera once. Print pattern.png, paste on a clipboard, show to camera and capture non-blurry images in which points are detected well.")
+        print("Press s to save frame, c to continue, q to quit")
+        cam_calibrate(cam_idx, cam_caps[i], cam_calib)
+    
+    cam_calibs += [cam_calib]
 
 
 
@@ -51,16 +54,16 @@ subject = input('Enter subject name: ')
 subject += "+%d"%opt.k
 opt.subject = subject
 calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
-
+data = None
 model = create_model(opt)
 mon = monitor()
-processor = process_core(opt, cam_calib)
+processor = process_core(opt, cam_calibs)
 
 if opt.do_collect:
-    data = collect_data(subject, cam_cap, mon, calib_points=opt.k, rand_points=5)
+    data = collect_data(subject, cam_caps, processor, mon, calib_points=1, rand_points=1, view_collect = False)
 
 if opt.do_finetune or opt.do_collect:
-    model = fine_tune(opt, processor, model, steps=1000)
+    model = fine_tune(opt, data, processor, model, steps=1000)
 else:
     model.load_init_networks()
 
@@ -69,4 +72,4 @@ else:
 # Run on live webcam feed and
 # show point of regard on screen
 #################################
-processor.process(cam_cap, model)
+processor.process(cam_caps, model)

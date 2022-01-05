@@ -33,7 +33,7 @@ class frame_processor:
             self.head_pose_estimator = PnPHeadPoseEstimator()
         elif opt.pose_estimator == "eos":
             self.head_pose_estimator = HeadPoseEstimator()
-    def img2patch(self, img, gaze_target = None):
+    def __call__(self, img, gaze_target = None):
         patch_type = self.opt.patch_type
         img = self.undistorter.apply(img)
         face_location = self.face.detect(img,  scale=0.25, use_max='SIZE')

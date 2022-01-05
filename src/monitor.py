@@ -21,9 +21,8 @@ class monitor:
 
         self.h_mm = default_screen.get_monitor_height_mm(num)
         self.w_mm = default_screen.get_monitor_width_mm(num)
-
-        self.h_pixels = default_screen.get_height()
-        self.w_pixels = default_screen.get_width()
+        self.h_pixels = 1080
+        self.w_pixels = 1920
 
         self.pixels_per_millimeter = (self.w_pixels / self.w_mm,  self.h_pixels / self.h_mm)
 
@@ -47,7 +46,7 @@ if __name__ == "__main__":
     mon = monitor()
     print(mon.h_mm)
     print(mon.w_mm)
-    print(mon.h_mm)
+    # print(mon.h_mm)
     print(mon.pixels_per_millimeter)
     print(mon.h_pixels)
     print(mon.w_pixels)

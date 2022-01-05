@@ -22,11 +22,10 @@ keys = {'u': 82,
         'r': 83}
 
 global THREAD_RUNNING
-global frames
+global frame0s, frame1s, frame2s, last
 
 def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E', grid=True, total=9, use_last = False):
     global last
-
     h = mon.h_pixels
     w = mon.w_pixels
     if not use_last: 
@@ -50,6 +49,9 @@ def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E'
                 col = int(i / 5)
                 x = int((0.02 + 0.24 * row) * w)
                 y = int((0.02 + 0.48 * col) * h)
+            else:
+                x = int(random.uniform(0.05, 0.95) * w)
+                y = int(random.uniform(0.05, 0.95) * h)
         else:
             x = int(random.uniform(0.05, 0.95) * w)
             y = int(random.uniform(0.05, 0.95) * h)
@@ -89,32 +91,50 @@ def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E'
 
     return img, g_t
 
+def check_len(frames, lens = 10):
+    while len(frames) < lens:
+        print("len(frames)",len(frames))
+        pass
 
-def grab_img(cap):
+def grab_img0(cap):
     global THREAD_RUNNING
-    global frames
+    global frame0s
     while THREAD_RUNNING:
         _, frame = cap.read()
-        frames.append(frame)
+        frame0s.append(frame)
+        print("len(frame0s)",len(frame0s))
 
-
-def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
+def grab_img1(cap):
     global THREAD_RUNNING
-    global frames
+    global frame1s
+    while THREAD_RUNNING:
+        _, frame = cap.read()
+        frame1s.append(frame)
+
+
+def collect_data(subject, caps, processor, mon, calib_points=9, rand_points=5, view_collect = False):
+    global THREAD_RUNNING
+    global frame0s, frame1s
 
     cv.namedWindow("image", cv.WINDOW_NORMAL)
     cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-
-    calib_data = {'frames': [], 'g_t': []}
+    num_cap = len(caps)
+    calib_data = {'g_t': []}
+    for j in range(num_cap):
+        calib_data["frame%ds"%j] = []
 
     i = 0
     while i < calib_points:
-
         # Start the sub-thread, which is responsible for grabbing images
-        frames = []
         THREAD_RUNNING = True
-        th = threading.Thread(target=grab_img, args=(cap,))
-        th.start()
+        ths = []
+        for j in range(num_cap):
+            globals()["frame%ds"%j] = [] 
+            th = threading.Thread(target=eval('grab_img%d'%j), args=(caps[j],))
+            th.start()
+            ths.append(th)
+            # exec("th%d = threading.Thread(target=grab_img%d, args=(caps[%d],))"%(j,j,j))
+            # exec("th%d.start()"%j)
         direction = random.choice(directions)
         img, g_t = create_image(mon, direction, i, (0, 0, 0), grid=True, total=calib_points)
         cv.imshow('image', img)
@@ -124,11 +144,12 @@ def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
         cv.imshow('image', img)
         key_press = cv.waitKey(0)
         if key_press == keys[direction]:
-            while len(frames) < 10:
-                pass
-            THREAD_RUNNING = False
-            th.join()
-            calib_data['frames'].append(frames)
+            for j in range(num_cap):
+                while len(eval("frame%ds"%j)) < 10:
+                     pass
+                THREAD_RUNNING = False
+                ths[j].join()
+                calib_data['frame%ds'%j].append(eval("frame%ds"%j))
             calib_data['g_t'].append(g_t)
             img, g_t = create_image(mon, direction, i, (0,  0, 255), thickness = 4,  grid=True, total=calib_points, use_last = True)
             cv.imshow('image', img)
@@ -140,18 +161,23 @@ def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
             break
         else:
             THREAD_RUNNING = False
-            th.join()
+            for j in range(num_cap):
+                ths[j].join()
 
         # time.sleep(0.5)
 
     i = 0
     while i < rand_points:
-
         # Start the sub-thread, which is responsible for grabbing images
-        frames = []
         THREAD_RUNNING = True
-        th = threading.Thread(target=grab_img, args=(cap,))
-        th.start()
+        ths = []
+        for j in range(num_cap):
+            globals()["frame%ds"%j] = [] 
+            th = threading.Thread(target=eval('grab_img%d'%j), args=(caps[j],))
+            th.start()
+            ths.append(th)
+            # exec("th%d = threading.Thread(target=grab_img%d, args=(caps[%d],))"%(j,j,j))
+            # exec("th%d.start()"%j)
         direction = random.choice(directions)
         img, g_t = create_image(mon, direction, i, (0, 0, 0), grid=False, total=rand_points)
         cv.imshow('image', img)
@@ -161,13 +187,15 @@ def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
         cv.imshow('image', img)
         key_press = cv.waitKey(0)
         if key_press == keys[direction]:
-            while len(frames) < 10:
-                pass
-            THREAD_RUNNING = False
-            th.join()
-            calib_data['frames'].append(frames)
+            for j in range(num_cap):
+                while len(eval("frame%ds"%j)) < 10:
+                    print(len(eval("frame%ds"%j)))
+                    pass
+                THREAD_RUNNING = False
+                ths[j].join()
+                calib_data['frame%ds'%j].append(eval("frame%ds"%j))
             calib_data['g_t'].append(g_t)
-            img, g_t = create_image(mon, direction, i, (0,  0, 255), grid=False, thickness = 4,  total=rand_points,  use_last = True)
+            img, g_t = create_image(mon, direction, i, (0,  0, 255), thickness = 4,  grid=False, total=rand_points, use_last = True)
             cv.imshow('image', img)
             cv.waitKey(10)
             time.sleep(0.5)
@@ -177,23 +205,27 @@ def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
             break
         else:
             THREAD_RUNNING = False
-            th.join()
+            for j in range(num_cap):
+                ths[j].join()
+
     cv.destroyAllWindows()
-    
-    imgs_path = 'calibration/%s_calib'% subject
-    os.makedirs(imgs_path, exist_ok=True)
+    img_paths = []
+    for j in range(num_cap):
+        img_path = 'calibration/%s_calib/cam%d'%(subject, j)
+        os.makedirs(img_path, exist_ok=True)
+        img_paths.append(img_path)
     target = []
-    n = 0
-
-    for index, frames in enumerate(calib_data['frames']):
-        for i in range(len(frames) - 10, len(frames)):
-            frame = frames[i]
-            g_t = calib_data['g_t'][index]
-            target.append(g_t)
+    for j in range(num_cap):
+        n = 0 
+        for index, frames in enumerate(calib_data['frame%ds'%j]):
+            for k in range(len(frames) - 10, len(frames)):
+                frame = frames[k]
+                g_t = calib_data['g_t'][index]
+                target.append(g_t)
             # print(os.path.join(imgs_path,"%05d.png"%n))
-            cv.imwrite(os.path.join(imgs_path,"%05d.png"%n), frame)
+                cv.imwrite(os.path.join(img_paths[j],"%05d.png"%n), frame)
+                n += 1
 
-            n += 1
     # print(target)
     fout = open('calibration/%s_calib_target.pkl' % subject, 'wb')
     pickle.dump(target, fout)
@@ -201,7 +233,7 @@ def collect_data(subject, cap, mon, calib_points=9, rand_points=5):
     return calib_data
 
 
-def fine_tune(opt, core, gaze_network, steps=1000):
+def fine_tune(opt, data, core, gaze_network, steps=1000):
 
     # collect person calibration data
     gaze_network.load_init_networks()
