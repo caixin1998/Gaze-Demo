@@ -57,13 +57,13 @@ calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibratio
 data = None
 model = create_model(opt)
 mon = monitor()
-processor = process_core(opt, cam_calibs)
+core = process_core(opt, cam_calibs)
 
 if opt.do_collect:
-    data = collect_data(subject, cam_caps, processor, mon, calib_points=1, rand_points=1, view_collect = False)
+    data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False)
 
 if opt.do_finetune or opt.do_collect:
-    model = fine_tune(opt, data, processor, model, steps=1000)
+    model = fine_tune(opt, data, core, model, steps=1000)
 else:
     model.load_init_networks()
 
@@ -72,4 +72,4 @@ else:
 # Run on live webcam feed and
 # show point of regard on screen
 #################################
-processor.process(cam_caps, model)
+core.process(cam_caps, model)
