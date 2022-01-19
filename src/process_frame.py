@@ -34,11 +34,9 @@ class frame_processor:
         elif opt.pose_estimator == "eos":
             self.head_pose_estimator = HeadPoseEstimator()
     def __call__(self, img, gaze_target = None):
-        print('hello')
         patch_type = self.opt.patch_type
         img = self.undistorter.apply(img)
         face_location = self.face.detect(img,  scale=0.25, use_max='SIZE')
-        print('hello++')
 
         if len(face_location) > 0:
                 # use kalman filter to smooth bounding box position
@@ -51,7 +49,6 @@ class frame_processor:
                 # detect facial points
             pts = self.landmarks_detector.detect(face_location, img)
                 # run Kalman filter on landmarks to smooth them
-            print('hello++++')
             
             for i in range(68):
                 kalman_filters_landm_complex = self.kalman_filters_landm[i].update(pts[i, 0] + 1j * pts[i, 1])

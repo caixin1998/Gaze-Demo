@@ -126,9 +126,9 @@ def check_len(frames, lens = 10):
 #                 normalized_entry["gaze_cam_origin"],flush=True)
 
 class GrabImg(threading.Thread):
-    def __init__(self, opt, cam_calib, idx, cap, mutex):
+    def __init__(self, processor, idx, cap, mutex):
         super(GrabImg, self).__init__()
-        self.processor = frame_processor(opt, cam_calib)
+        self.processor = processor
         self.idx = idx
         self.cap = cap
         self.mutex = mutex
@@ -145,8 +145,10 @@ class GrabImg(threading.Thread):
             if ret_face:
                 for key, value in normalized_entry.items():
                     add_kv(data[self.idx], key, value)
+                normalized_entry["gaze_cam_origin"][2,0] -= 10 
+                os.system("clear")
                 print("For cam%d, the gaze_cam_origin is "%self.idx,\
-                    normalized_entry["gaze_cam_origin"],flush=True)
+                    normalized_entry["gaze_cam_origin"].reshape(3),end = "",flush=True)
 
 
 # def grab_img1(cap, core):
@@ -174,21 +176,26 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
     num_cap = len(caps)
     calib_data = {'g_t': []}
     ths = []
+    processors = []
     for j in range(num_cap):
         calib_data["frame%ds"%j] = []
         data.append({})
         frames.append([])
         results.append({})
-        th = GrabImg(opt, cam_calibs[j], j, caps[j], mutex)
-        ths.append(th)
-
+        processor = frame_processor(opt, cam_calibs[j])
+        processors.append(processor)
+        # th = GrabImg(opt, cam_calibs[j], j, caps[j], mutex)
+        # ths.append(th)
+    
     cv.namedWindow("image", cv.WINDOW_NORMAL)
     cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     for stage, point_num in enumerate([calib_points, rand_points]):
         i = 0
   
         while i < point_num:
-
+            for j in range(num_cap):
+                th = GrabImg(processors[j], j, caps[j], mutex)
+                ths.append(th)
             # Start the sub-thread, which is responsible for grabbing images
             THREAD_RUNNING = True
             direction = random.choice(directions)
@@ -223,7 +230,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 calib_data['g_t'].append(g_t)
                 img, g_t = create_image(mon, direction, i, (0,  0, 255), thickness = 4,  grid = 1 - stage, total=point_num, use_last = True)
                 cv.imshow('image', img)
-                cv.waitKey(10)
+                cv.waitKey(100)
                 time.sleep(0.5)
                 i += 1
             elif key_press & 0xFF == ord('q'):
@@ -241,9 +248,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                     add_kv(results[j], key, value)
 
             ths = []
-            for j in range(num_cap):
-                th = GrabImg(opt, cam_calibs[j], j, caps[j], mutex)
-                ths.append(th)
+
 
     cv.destroyAllWindows()
     img_paths = []

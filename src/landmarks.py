@@ -123,7 +123,6 @@ class landmarks:
 
         frame_rgb = np.array(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), dtype=np.float32)
         img = transforms.crop(frame_rgb, center, scale, [256, 256], rot=0)
-        print("DDDDDDDDDDDDDDDDDd")
         img = img.astype(np.float32)
         img_mean = np.array([0.485, 0.456, 0.406], dtype=np.float32)
         img_std = np.array([0.229, 0.224, 0.225], dtype=np.float32)
@@ -139,7 +138,6 @@ class landmarks:
         scale = np.expand_dims(np.array(scale, dtype=np.float32), axis=0)
         preds = evaluation.decode_preds(score_map, center, scale, [64, 64])
         preds = np.squeeze(preds.numpy(), axis=0)
-        print("DDDDDDDeeeeeeeeeeDDDDDDDDDDd")
         
         # get the 68 300 VW points:
         idx_300vw = self.map_to_300vw()

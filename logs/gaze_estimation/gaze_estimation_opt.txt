@@ -3,7 +3,7 @@
                       cal: False                         
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
-                  cam_idx: [0]                           
+                  cam_idx: [2]                           	[default: [0]]
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
                    config: None                          

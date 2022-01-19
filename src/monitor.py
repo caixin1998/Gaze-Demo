@@ -27,7 +27,7 @@ class monitor:
         self.pixels_per_millimeter = (self.w_pixels / self.w_mm,  self.h_pixels / self.h_mm)
 
         self.inv_camera_transformation = np.eye(4)
-        self.inv_camera_transformation[:3,3] = np.array([265, -24, 0])
+        self.inv_camera_transformation[:3,3] = np.array([271, -24, 0])
         self.inv_camera_transformation[0][0] = -1
         self.inv_camera_transformation[2][2] = -1
         self.camera_transformation = np.linalg.pinv(self.inv_camera_transformation)

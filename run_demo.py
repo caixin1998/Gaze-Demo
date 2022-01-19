@@ -30,6 +30,7 @@ cam_indices, cam_caps, cam_calibs = [], [], []
 for i,cam_idx in enumerate(opt.cam_idx):
     cam_indices += [cam_idx]
     cam_caps += [cv.VideoCapture(cam_idx)]
+    cam_caps[i].set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc('M', 'J', 'P', 'G'))
     cam_caps[i].set(cv.CAP_PROP_FRAME_WIDTH, opt.camera_size[0])
     cam_caps[i].set(cv.CAP_PROP_FRAME_HEIGHT, opt.camera_size[1])
 
@@ -60,7 +61,7 @@ mon = monitor()
 core = process_core(opt, cam_calibs)
 
 if opt.do_collect:
-    data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False)
+    data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=9, rand_points=4, view_collect = False)
 
 if opt.do_finetune or opt.do_collect:
     model = fine_tune(opt, data, core, model, steps=1000)
