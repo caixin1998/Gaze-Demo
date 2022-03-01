@@ -6,14 +6,16 @@ from .completion_net import CompletionNetwork,LocalDis,GlobalDis,PredictionEyeNe
 from .fsanet import FSANet
 from .iTrackerModel import iTrackerECModel
 from .gaze_process import GazeProcess
-from .vtp import VTP
+# from .vtp import VTP
 from .hrnet import hrnet18, hrnet32, hrnet48, hrnet64
 from .hratp import hratp18, hratp32, hratp48, hratp64
 from .hrmap import hrmap18, hrmap32, hrmap48
 from .convxnet import convnext_base, convnext_large, convnext_xlarge
 # from .hrnet_w import hrnet_w64
 
-
+from .iTrackerModel import iTrackerECModel
+from .eye_net import EyeNet
+from .dt_ed import DTED
 
 #from .fsanet_64 import FSANet
 __all__ = [
@@ -29,7 +31,6 @@ __all__ = [
     'PredictionEyeNetwork',
     'iTrackerECModel',
     'GazeProcess',
-    'VTP',
     'hrnet18', 
     'hrnet32',
     'hrnet48',
@@ -44,5 +45,8 @@ __all__ = [
     'resnetx50',
     'convnext_base',
     'convnext_large',
-    'convnext_xlarge'
+    'convnext_xlarge',
+    'iTrackerECModel',
+    'EyeNet',
+    'DTED',
 ]

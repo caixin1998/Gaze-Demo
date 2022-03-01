@@ -17,7 +17,7 @@ You need to implement the following functions:
 """
 import torch
 from .base_model import BaseModel
-from modules import GazeNetwork
+from .networks import GazeNetwork
 from .losses import GazeAngularLoss
 import os,sys
 import random

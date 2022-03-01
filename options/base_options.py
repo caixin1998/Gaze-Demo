@@ -27,6 +27,7 @@ class BaseOptions():
         parser.add_argument('--checkpoints_dir', type=str, default='./logs', help='models are saved here')
         # model parameters
 
+        parser.add_argument('--half', type=int, default=0, help='if specified, use the upper part of the face for gaze estimation')
         
         #for model
         parser.add_argument('--model', type=str, default='faze', help='chooses which model to use. ')
