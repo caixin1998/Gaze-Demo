@@ -1,0 +1,8 @@
+model: eve
+# do_collect: False
+name: eve
+backbone: resnet50
+camera_size: [1920, 1080]
+visualize_cal: True
+pose_estimator: eos
+patch_type: 'face'

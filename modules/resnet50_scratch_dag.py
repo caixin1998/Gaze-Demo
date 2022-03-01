@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import os
 
 class Resnet50_scratch_dag(nn.Module):
 
@@ -183,7 +183,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv2_1_1x1_increase_bn = self.conv2_1_1x1_increase_bn(conv2_1_1x1_increase)
         conv2_1_1x1_proj = self.conv2_1_1x1_proj(pool1_3x3_s2)
         conv2_1_1x1_proj_bn = self.conv2_1_1x1_proj_bn(conv2_1_1x1_proj)
-        conv2_1 = torch.add(conv2_1_1x1_proj_bn, 1, conv2_1_1x1_increase_bn)
+        conv2_1 = torch.add(conv2_1_1x1_proj_bn,  conv2_1_1x1_increase_bn)
         conv2_1x = self.conv2_1_relu(conv2_1)
         conv2_2_1x1_reduce = self.conv2_2_1x1_reduce(conv2_1x)
         conv2_2_1x1_reduce_bn = self.conv2_2_1x1_reduce_bn(conv2_2_1x1_reduce)
@@ -193,7 +193,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv2_2_3x3_bnxx = self.conv2_2_3x3_relu(conv2_2_3x3_bn)
         conv2_2_1x1_increase = self.conv2_2_1x1_increase(conv2_2_3x3_bnxx)
         conv2_2_1x1_increase_bn = self.conv2_2_1x1_increase_bn(conv2_2_1x1_increase)
-        conv2_2 = torch.add(conv2_1x, 1, conv2_2_1x1_increase_bn)
+        conv2_2 = torch.add(conv2_1x,  conv2_2_1x1_increase_bn)
         conv2_2x = self.conv2_2_relu(conv2_2)
         conv2_3_1x1_reduce = self.conv2_3_1x1_reduce(conv2_2x)
         conv2_3_1x1_reduce_bn = self.conv2_3_1x1_reduce_bn(conv2_3_1x1_reduce)
@@ -203,7 +203,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv2_3_3x3_bnxx = self.conv2_3_3x3_relu(conv2_3_3x3_bn)
         conv2_3_1x1_increase = self.conv2_3_1x1_increase(conv2_3_3x3_bnxx)
         conv2_3_1x1_increase_bn = self.conv2_3_1x1_increase_bn(conv2_3_1x1_increase)
-        conv2_3 = torch.add(conv2_2x, 1, conv2_3_1x1_increase_bn)
+        conv2_3 = torch.add(conv2_2x,  conv2_3_1x1_increase_bn)
         conv2_3x = self.conv2_3_relu(conv2_3)
         conv3_1_1x1_reduce = self.conv3_1_1x1_reduce(conv2_3x)
         conv3_1_1x1_reduce_bn = self.conv3_1_1x1_reduce_bn(conv3_1_1x1_reduce)
@@ -215,7 +215,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv3_1_1x1_increase_bn = self.conv3_1_1x1_increase_bn(conv3_1_1x1_increase)
         conv3_1_1x1_proj = self.conv3_1_1x1_proj(conv2_3x)
         conv3_1_1x1_proj_bn = self.conv3_1_1x1_proj_bn(conv3_1_1x1_proj)
-        conv3_1 = torch.add(conv3_1_1x1_proj_bn, 1, conv3_1_1x1_increase_bn)
+        conv3_1 = torch.add(conv3_1_1x1_proj_bn,  conv3_1_1x1_increase_bn)
         conv3_1x = self.conv3_1_relu(conv3_1)
         conv3_2_1x1_reduce = self.conv3_2_1x1_reduce(conv3_1x)
         conv3_2_1x1_reduce_bn = self.conv3_2_1x1_reduce_bn(conv3_2_1x1_reduce)
@@ -225,7 +225,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv3_2_3x3_bnxx = self.conv3_2_3x3_relu(conv3_2_3x3_bn)
         conv3_2_1x1_increase = self.conv3_2_1x1_increase(conv3_2_3x3_bnxx)
         conv3_2_1x1_increase_bn = self.conv3_2_1x1_increase_bn(conv3_2_1x1_increase)
-        conv3_2 = torch.add(conv3_1x, 1, conv3_2_1x1_increase_bn)
+        conv3_2 = torch.add(conv3_1x, conv3_2_1x1_increase_bn)
         conv3_2x = self.conv3_2_relu(conv3_2)
         conv3_3_1x1_reduce = self.conv3_3_1x1_reduce(conv3_2x)
         conv3_3_1x1_reduce_bn = self.conv3_3_1x1_reduce_bn(conv3_3_1x1_reduce)
@@ -235,7 +235,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv3_3_3x3_bnxx = self.conv3_3_3x3_relu(conv3_3_3x3_bn)
         conv3_3_1x1_increase = self.conv3_3_1x1_increase(conv3_3_3x3_bnxx)
         conv3_3_1x1_increase_bn = self.conv3_3_1x1_increase_bn(conv3_3_1x1_increase)
-        conv3_3 = torch.add(conv3_2x, 1, conv3_3_1x1_increase_bn)
+        conv3_3 = torch.add(conv3_2x,  conv3_3_1x1_increase_bn)
         conv3_3x = self.conv3_3_relu(conv3_3)
         conv3_4_1x1_reduce = self.conv3_4_1x1_reduce(conv3_3x)
         conv3_4_1x1_reduce_bn = self.conv3_4_1x1_reduce_bn(conv3_4_1x1_reduce)
@@ -245,7 +245,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv3_4_3x3_bnxx = self.conv3_4_3x3_relu(conv3_4_3x3_bn)
         conv3_4_1x1_increase = self.conv3_4_1x1_increase(conv3_4_3x3_bnxx)
         conv3_4_1x1_increase_bn = self.conv3_4_1x1_increase_bn(conv3_4_1x1_increase)
-        conv3_4 = torch.add(conv3_3x, 1, conv3_4_1x1_increase_bn)
+        conv3_4 = torch.add(conv3_3x,  conv3_4_1x1_increase_bn)
         conv3_4x = self.conv3_4_relu(conv3_4)
         conv4_1_1x1_reduce = self.conv4_1_1x1_reduce(conv3_4x)
         conv4_1_1x1_reduce_bn = self.conv4_1_1x1_reduce_bn(conv4_1_1x1_reduce)
@@ -257,7 +257,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_1_1x1_increase_bn = self.conv4_1_1x1_increase_bn(conv4_1_1x1_increase)
         conv4_1_1x1_proj = self.conv4_1_1x1_proj(conv3_4x)
         conv4_1_1x1_proj_bn = self.conv4_1_1x1_proj_bn(conv4_1_1x1_proj)
-        conv4_1 = torch.add(conv4_1_1x1_proj_bn, 1, conv4_1_1x1_increase_bn)
+        conv4_1 = torch.add(conv4_1_1x1_proj_bn,  conv4_1_1x1_increase_bn)
         conv4_1x = self.conv4_1_relu(conv4_1)
         conv4_2_1x1_reduce = self.conv4_2_1x1_reduce(conv4_1x)
         conv4_2_1x1_reduce_bn = self.conv4_2_1x1_reduce_bn(conv4_2_1x1_reduce)
@@ -267,7 +267,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_2_3x3_bnxx = self.conv4_2_3x3_relu(conv4_2_3x3_bn)
         conv4_2_1x1_increase = self.conv4_2_1x1_increase(conv4_2_3x3_bnxx)
         conv4_2_1x1_increase_bn = self.conv4_2_1x1_increase_bn(conv4_2_1x1_increase)
-        conv4_2 = torch.add(conv4_1x, 1, conv4_2_1x1_increase_bn)
+        conv4_2 = torch.add(conv4_1x, conv4_2_1x1_increase_bn)
         conv4_2x = self.conv4_2_relu(conv4_2)
         conv4_3_1x1_reduce = self.conv4_3_1x1_reduce(conv4_2x)
         conv4_3_1x1_reduce_bn = self.conv4_3_1x1_reduce_bn(conv4_3_1x1_reduce)
@@ -277,7 +277,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_3_3x3_bnxx = self.conv4_3_3x3_relu(conv4_3_3x3_bn)
         conv4_3_1x1_increase = self.conv4_3_1x1_increase(conv4_3_3x3_bnxx)
         conv4_3_1x1_increase_bn = self.conv4_3_1x1_increase_bn(conv4_3_1x1_increase)
-        conv4_3 = torch.add(conv4_2x, 1, conv4_3_1x1_increase_bn)
+        conv4_3 = torch.add(conv4_2x, conv4_3_1x1_increase_bn)
         conv4_3x = self.conv4_3_relu(conv4_3)
         conv4_4_1x1_reduce = self.conv4_4_1x1_reduce(conv4_3x)
         conv4_4_1x1_reduce_bn = self.conv4_4_1x1_reduce_bn(conv4_4_1x1_reduce)
@@ -287,7 +287,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_4_3x3_bnxx = self.conv4_4_3x3_relu(conv4_4_3x3_bn)
         conv4_4_1x1_increase = self.conv4_4_1x1_increase(conv4_4_3x3_bnxx)
         conv4_4_1x1_increase_bn = self.conv4_4_1x1_increase_bn(conv4_4_1x1_increase)
-        conv4_4 = torch.add(conv4_3x, 1, conv4_4_1x1_increase_bn)
+        conv4_4 = torch.add(conv4_3x, conv4_4_1x1_increase_bn)
         conv4_4x = self.conv4_4_relu(conv4_4)
         conv4_5_1x1_reduce = self.conv4_5_1x1_reduce(conv4_4x)
         conv4_5_1x1_reduce_bn = self.conv4_5_1x1_reduce_bn(conv4_5_1x1_reduce)
@@ -297,7 +297,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_5_3x3_bnxx = self.conv4_5_3x3_relu(conv4_5_3x3_bn)
         conv4_5_1x1_increase = self.conv4_5_1x1_increase(conv4_5_3x3_bnxx)
         conv4_5_1x1_increase_bn = self.conv4_5_1x1_increase_bn(conv4_5_1x1_increase)
-        conv4_5 = torch.add(conv4_4x, 1, conv4_5_1x1_increase_bn)
+        conv4_5 = torch.add(conv4_4x,  conv4_5_1x1_increase_bn)
         conv4_5x = self.conv4_5_relu(conv4_5)
         conv4_6_1x1_reduce = self.conv4_6_1x1_reduce(conv4_5x)
         conv4_6_1x1_reduce_bn = self.conv4_6_1x1_reduce_bn(conv4_6_1x1_reduce)
@@ -307,7 +307,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv4_6_3x3_bnxx = self.conv4_6_3x3_relu(conv4_6_3x3_bn)
         conv4_6_1x1_increase = self.conv4_6_1x1_increase(conv4_6_3x3_bnxx)
         conv4_6_1x1_increase_bn = self.conv4_6_1x1_increase_bn(conv4_6_1x1_increase)
-        conv4_6 = torch.add(conv4_5x, 1, conv4_6_1x1_increase_bn)
+        conv4_6 = torch.add(conv4_5x,  conv4_6_1x1_increase_bn)
         conv4_6x = self.conv4_6_relu(conv4_6)
         conv5_1_1x1_reduce = self.conv5_1_1x1_reduce(conv4_6x)
         conv5_1_1x1_reduce_bn = self.conv5_1_1x1_reduce_bn(conv5_1_1x1_reduce)
@@ -319,7 +319,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv5_1_1x1_increase_bn = self.conv5_1_1x1_increase_bn(conv5_1_1x1_increase)
         conv5_1_1x1_proj = self.conv5_1_1x1_proj(conv4_6x)
         conv5_1_1x1_proj_bn = self.conv5_1_1x1_proj_bn(conv5_1_1x1_proj)
-        conv5_1 = torch.add(conv5_1_1x1_proj_bn, 1, conv5_1_1x1_increase_bn)
+        conv5_1 = torch.add(conv5_1_1x1_proj_bn,  conv5_1_1x1_increase_bn)
         conv5_1x = self.conv5_1_relu(conv5_1)
         conv5_2_1x1_reduce = self.conv5_2_1x1_reduce(conv5_1x)
         conv5_2_1x1_reduce_bn = self.conv5_2_1x1_reduce_bn(conv5_2_1x1_reduce)
@@ -329,7 +329,7 @@ class Resnet50_scratch_dag(nn.Module):
         conv5_2_3x3_bnxx = self.conv5_2_3x3_relu(conv5_2_3x3_bn)
         conv5_2_1x1_increase = self.conv5_2_1x1_increase(conv5_2_3x3_bnxx)
         conv5_2_1x1_increase_bn = self.conv5_2_1x1_increase_bn(conv5_2_1x1_increase)
-        conv5_2 = torch.add(conv5_1x, 1, conv5_2_1x1_increase_bn)
+        conv5_2 = torch.add(conv5_1x, conv5_2_1x1_increase_bn)
         conv5_2x = self.conv5_2_relu(conv5_2)
         conv5_3_1x1_reduce = self.conv5_3_1x1_reduce(conv5_2x)
         conv5_3_1x1_reduce_bn = self.conv5_3_1x1_reduce_bn(conv5_3_1x1_reduce)
@@ -339,20 +339,23 @@ class Resnet50_scratch_dag(nn.Module):
         conv5_3_3x3_bnxx = self.conv5_3_3x3_relu(conv5_3_3x3_bn)
         conv5_3_1x1_increase = self.conv5_3_1x1_increase(conv5_3_3x3_bnxx)
         conv5_3_1x1_increase_bn = self.conv5_3_1x1_increase_bn(conv5_3_1x1_increase)
-        conv5_3 = torch.add(conv5_2x, 1, conv5_3_1x1_increase_bn)
+        conv5_3 = torch.add(conv5_2x,  conv5_3_1x1_increase_bn)
         conv5_3x = self.conv5_3_relu(conv5_3)
         pool5_7x7_s1 = self.pool5_7x7_s1(conv5_3x)
-        classifier_preflatten = self.classifier(pool5_7x7_s1)
-        classifier = classifier_preflatten.view(classifier_preflatten.size(0), -1)
+        pool5_7x7_s1 = pool5_7x7_s1.view(pool5_7x7_s1.size(0), -1)
+        # classifier_preflatten = self.classifier(pool5_7x7_s1)
+        # classifier = classifier_preflatten.view(classifier_preflatten.size(0), -1)
         return pool5_7x7_s1
 
-def resnet50_scratch_dag(weights_path='../ckpt/resnet50_scratch_dag.pth', **kwargs):
+def resnet50_scratch_dag(weights_path='resnet50_scratch_dag.pth', **kwargs):
     """
     load imported model instance
 
     Args:
         weights_path (str): If set, loads model weights from the given path
     """
+    path = os.path.dirname(os.path.abspath(__file__))
+    weights_path = os.path.join(path, weights_path)
     model = Resnet50_scratch_dag()
     if weights_path:
         state_dict = torch.load(weights_path)

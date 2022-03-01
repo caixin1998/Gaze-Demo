@@ -37,7 +37,7 @@ class process_core:
 
     def __init__(self, opt, cam_calibs):
 
-        self.mon = monitor()
+        self.mon = monitor(opt)
         self.cell_x = 3
         self.cell_y = 3
         self.start  = 0
@@ -154,22 +154,19 @@ class process_core:
 
 
     def process_for_finetune(self, subject):
-            
         data = {}
-
-
-        with open('calibration/%s_calib_target.pkl' % subject, 'rb') as f:
+        with open('calibration/%s/%s/calib_target.pkl' %(self.opt.id, subject), 'rb') as f:
             targets = pickle.load(f)
         for i, processor in enumerate(self.processors):
-            imgs_path = 'calibration/%s_calib/cam%d'% (subject, i)
+            imgs_path = 'calibration/%s/%s/cam%d'% (self.opt.id, subject, i)
             if self.opt.visualize_cal:
                 imgs_visual_path = 'calibration/%s_calib_visual/cam%d'% (subject, i)
                 os.makedirs(imgs_visual_path, exist_ok=True)
             imgs_list = os.listdir(imgs_path)
             imgs_list.sort()
-            for i, img_file in enumerate(imgs_list):
+            for k, img_file in enumerate(imgs_list):
                 img = cv.imread(os.path.join(imgs_path,img_file))
-                target_3d = targets[i]
+                target_3d = targets[k]
 
                 ret_face, normalized_entry, patch_img = processor(img, target_3d)
                 if ret_face:

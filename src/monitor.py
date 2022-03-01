@@ -13,7 +13,7 @@ import numpy as np
 
 class monitor:
 
-    def __init__(self):
+    def __init__(self, opt):
         display = Gdk.Display.get_default()
         screen = display.get_default_screen()
         default_screen = screen.get_default()
@@ -25,13 +25,13 @@ class monitor:
         self.w_pixels = 1920
 
         self.pixels_per_millimeter = (self.w_pixels / self.w_mm,  self.h_pixels / self.h_mm)
-
-        self.inv_camera_transformation = np.eye(4)
-        self.inv_camera_transformation[:3,3] = np.array([271, -24, 0])
-        self.inv_camera_transformation[0][0] = -1
-        self.inv_camera_transformation[2][2] = -1
+        self.inv_camera_transformation = np.loadtxt("/home/caixin/tnm-opencv/data/%s/cam%s/opt.txt"%(opt.id, opt.cam_idx[0]), delimiter = ',')
+        # self.inv_camera_transformation = np.eye(4)
+        # self.inv_camera_transformation[:3,3] = np.array([271, -24, 0]) # from camera to monitor 
+        # self.inv_camera_transformation[0][0] = -1
+        # self.inv_camera_transformation[2][2] = -1
         self.camera_transformation = np.linalg.pinv(self.inv_camera_transformation)
-        self.camera_transformation[3] = np.array([0,0,0,1])
+        # self.camera_transformation[3] = np.array([0,0,0,1])
 
 
     def monitor_to_camera(self, x_pixel, y_pixel):

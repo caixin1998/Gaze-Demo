@@ -138,3 +138,4 @@ eve_test
 *.dat
 src/ext
 *.out
+*.pth

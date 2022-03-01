@@ -54,10 +54,10 @@ for i,cam_idx in enumerate(opt.cam_idx):
 subject = input('Enter subject name: ')
 subject += "+%d"%opt.k
 opt.subject = subject
-calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
+# calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
 data = None
 model = create_model(opt)
-mon = monitor()
+mon = monitor(opt)
 core = process_core(opt, cam_calibs)
 
 if opt.do_collect:

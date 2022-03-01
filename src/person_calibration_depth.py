@@ -179,10 +179,11 @@ class GrabRealsense(threading.Thread):
             for j in range(len(self.caps)):
                 _, frame =  self.caps[j].read()
                 frames[j].append(frame)
-            #     ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
-            #     if ret_face:
-            #         for key, value in normalized_entry.items():
-            #             add_kv(data[j], key, value)
+                if j == 0:
+                    ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
+                    if ret_face:
+                        for key, value in normalized_entry.items():
+                            add_kv(data[j], key, value)
 
             if not depth_frame or not color_frame:
                 continue
@@ -319,14 +320,14 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 THREAD_RUNNING = False
                 th.join()
             # for j in range(num_cap):
-            #     for key, value in data[j].items():
-            #         add_kv(results[j], key, value)
+            for key, value in data[0].items():
+                add_kv(results[0], key, value)
 
 
     cv.destroyAllWindows()
     img_paths = []
     for j in range(num_cap):
-        img_path = 'calibration/%s_calib/cam%d'%(subject, j)
+        img_path = 'calibration/%s/%s/cam%d'%(opt.id, subject, j)
         os.makedirs(img_path, exist_ok=True)
         img_paths.append(img_path)
     
@@ -338,17 +339,15 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
         for index, frames_ in enumerate(save_data['frame%ds'%j]):
             print(j, index, len(frames_))
             for k in range(len(frames_) - 10, len(frames_)):
+                if j == 0:
+                    target.append(g_t)
                 frame = frames_[k]
                 cv.imwrite(os.path.join(img_paths[j],"%05d.png"%n), frame)
                 n += 1
 
-    for index in range(len(save_data['frame0s'])):
-        g_t = save_data['g_t'][index]
-        target.append(g_t)
-
     for key in rs_data.keys():
         n = 0 
-        save_path = 'calibration/%s_calib/%s'%(subject,key)
+        save_path = 'calibration/%s/%s/%s'%(opt.id, subject, key)
         os.makedirs(save_path,exist_ok= True)
         for index, frames_ in enumerate(save_data[key]):
             for k in range(len(frames_) - 10, len(frames_)):
@@ -360,7 +359,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                     cv.imwrite(os.path.join(save_path,"%05d.png"%n), frame)
                 n += 1
 
-    fout = open('calibration/%s_calib_target.pkl' % subject, 'wb')
+    fout = open('calibration/%s/%s/calib_target.pkl' %(opt.id, subject), 'wb')
     pickle.dump(target, fout)
     fout.close()
     return results[0]

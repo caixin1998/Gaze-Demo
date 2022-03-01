@@ -42,8 +42,8 @@ class BaseOptions():
         parser.add_argument('--cal_weights_path', type = str, default = 'weights/calibration')
         parser.add_argument('--k', type=int, default=9, help='point number for calibration (maml)')
 
-        parser.add_argument('--cam_idx', type=int, default=[4,6], nargs = '+',help='cam_idx')
-        parser.add_argument('--id', type=str, default="test",help='cam_idx')
+        parser.add_argument('--cam_idx', type=int, default=[4], nargs = '+',help='cam_idx')
+        parser.add_argument('--id', type=str, default="test",help='extrinsic parameters id.')
         parser.add_argument('--pose_estimator', type=str, default='pnp', help='pnp or eos')
         parser.add_argument('--patch_type', type=str, default='faze', help='faze, face or eyes')
 
