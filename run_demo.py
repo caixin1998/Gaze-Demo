@@ -16,7 +16,7 @@ warnings.filterwarnings("ignore")
 sys.path.append("src")
 from monitor import monitor
 from camera import cam_calibrate
-from person_calibration import collect_data, fine_tune
+from person_calibration_depth import collect_data, fine_tune
 from core import process_core
 from models import create_model
 #################################
@@ -61,7 +61,7 @@ mon = monitor()
 core = process_core(opt, cam_calibs)
 
 if opt.do_collect:
-    data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=9, rand_points=4, view_collect = False)
+    data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False)
 
 if opt.do_finetune or opt.do_collect:
     model = fine_tune(opt, data, core, model, steps=1000)

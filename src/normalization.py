@@ -51,9 +51,9 @@ def common_pre(entry, patch_type):
     # Get camera parameters
     if patch_type == "face":
         normalized_parameters = {
-        'focal_length': 1100,
+        'focal_length': 960,
         'distance': 600,
-        'size': (256, 256),
+        'size': (224, 224),
     }
     elif patch_type == "faze":
         normalized_parameters = {
