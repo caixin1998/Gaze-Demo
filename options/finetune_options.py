@@ -19,7 +19,9 @@ class FinetuneOptions(BaseOptions):
 
         #for dataloader
         parser.add_argument('--dataset', type=str, default='xgaze', help='chooses how datasets are loaded. [unaligned | aligned | single | colorization]')
-        parser.add_argument('--batch_size', type=int, default=256, help='input batch size')
+        parser.add_argument('--batch_size', type=int, default=64, help='input batch size')
+        parser.add_argument('--step', type=int, default=100, help='input batch size')
+        
         parser.add_argument('--num_threads', default=16, type=int, help='# threads for loading data')
 
 

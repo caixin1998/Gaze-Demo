@@ -41,6 +41,7 @@ def common_pre(entry, patch_type):
     rotate_mat, _ = cv2.Rodrigues(rvec)
 
     # Reconstruct frame
+    #full_frame = entry['full_frame']
     full_frame = cv2.cvtColor(entry['full_frame'], cv2.COLOR_BGR2RGB)
 
     # Form camera matrix

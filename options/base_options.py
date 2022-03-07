@@ -53,6 +53,13 @@ class BaseOptions():
         parser.add_argument('--visualize_cal', type=bool, default=False, help='display the face')
 
 
+        parser.add_argument('--cam', type=bool, default=False, help='display the face')
+        parser.add_argument('--write_features', type=bool, default=False, help='display the face')
+
+        parser.add_argument('--num_image_per_point', type=int, default=30, help='display the face')
+
+
+
         parser.add_argument('--camera_size', type=int, nargs = '+', default=[1920, 1080], help='display the face')
         self.initialized = True
         return parser

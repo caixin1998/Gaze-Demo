@@ -11,7 +11,7 @@ import torch
 sys.path.append("src")
 from undistorter import Undistorter
 from KalmanFilter1D import Kalman1D
-
+import multiprocessing as mp
 # from face import Face
 from landmarks import landmarks
 from head import PnPHeadPoseEstimator
@@ -32,6 +32,9 @@ def add_kv(list_dict, key, value):
     else:
         list_dict[key] = list()
         list_dict[key].append(value)
+
+
+
 
 class process_core:
 
@@ -67,25 +70,26 @@ class process_core:
         # self.labels = cam_calib['face_g']
         # print(self.labels)
     
-    def process(self, caps, gaze_network):
-        rets, imgs = [], []
-        for cap in caps:
-            ret, img = cap.read()
-            rets.append(ret)
-            imgs.append(img)
+    def process(self, queues, processes, gaze_network):
+        # rets, imgs = [], []
         gaze_network.eval()
         frame_idx = 0
-        while np.all(rets):
+        break_mark = 0
+        while break_mark == 0:
+            imgs = []
+            for queue in queues:
+                imgs.append(queue.get())
             ret_faces = []
             normalized_entries = {}
             for i, img in enumerate(imgs):
                 ret_face, normalized_entry, patch_img = self.processors[i](img)
                 ret_faces.append(ret_face)
-                for key, value in normalized_entry.items():
-                    add_kv(normalized_entries, key, value)
+         
                 #TODO:convert_input for muti-cam.
             # print(normalized_entries["gaze_cam"], normalized_entry)
                 if np.all(ret_faces):
+                    for key, value in normalized_entry.items():
+                        add_kv(normalized_entries, key, value)
                     model_input = gaze_network.convert_input(normalized_entry)
                     output_dict = gaze_network(model_input)
 
@@ -124,14 +128,17 @@ class process_core:
                     cv.imshow('por', display)
                     if cv.waitKey(1) & 0xFF == ord('q'):
                         cv.destroyAllWindows()
-                        cap.release()
+                        break_mark = 1
                         break
                 frame_idx += 1
-            rets, imgs = [], []
-            for cap in caps:
-                ret, img = cap.read()
-                rets.append(ret)
-                imgs.append(img)
+            imgs = []
+            # if break_mark:
+            #     for process in processes:
+            #         process.join()
+            # for cap in caps:
+            #     ret, img = cap.read()
+            #     rets.append(ret)
+            #     imgs.append(img)
 
 
     def calculate_pog_with_g(self, input, output, output_gaze_key = "gaze", output_suffix = ''):
@@ -154,17 +161,31 @@ class process_core:
 
 
     def process_for_finetune(self, subject):
+        num_image_per_point = self.opt.num_image_per_point
         data = {}
         with open('calibration/%s/%s/calib_target.pkl' %(self.opt.id, subject), 'rb') as f:
             targets = pickle.load(f)
         for i, processor in enumerate(self.processors):
             imgs_path = 'calibration/%s/%s/cam%d'% (self.opt.id, subject, i)
             if self.opt.visualize_cal:
-                imgs_visual_path = 'calibration/%s_calib_visual/cam%d'% (subject, i)
+                imgs_visual_path = 'calibration/%s/%s/calib_visual/cam%d'% (self.opt.id,subject, i)
                 os.makedirs(imgs_visual_path, exist_ok=True)
             imgs_list = os.listdir(imgs_path)
             imgs_list.sort()
+
+            train_indices = []
+            for i in range(0, k*num_image_per_point, num_image_per_point):
+                train_indices.append(random.sample(range(i, i + num_image_per_point), 3))
+            train_indices = sum(train_indices, [])
+
+            valid_indices = []
+            for i in range(k*10, len(imgs_list) - num_image_per_point, num_image_per_point):
+                valid_indices.append(random.sample(range(i, i + num_image_per_point), 1))
+            valid_indices = sum(valid_indices, [])
+            indices = train_indices + valid_indices
             for k, img_file in enumerate(imgs_list):
+                if k not in indices:
+                    continue
                 img = cv.imread(os.path.join(imgs_path,img_file))
                 target_3d = targets[k]
 

@@ -1,43 +1,46 @@
 ----------------- Options ---------------
-                 backbone: resnet50                      
-               batch_size: 64                            
+                atp_merge: transformer                   	[default: add]
+                 backbone: hratp64                       	[default: resnet50]
+               batch_size: 6                             	[default: 64]
                     beta1: 0.5                           
                       cal: False                         
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
                       cam: False                         
-                  cam_idx: [4, 10]                       	[default: [4]]
+                  cam_idx: [4]                           
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
-                   config: None                          
+                ckpt_path: weights/concat_hratp_640_half.ckpt	[default: weights/eve_face.ckpt]
+                   config: configs/ft.yaml               	[default: None]
                 criterion: smoothl1                      
                  dataroot: /home/caixin/GazeData/xgaze_224
                   dataset: xgaze                         
              dataset_mode: aligned                       
             display_patch: True                          
-               do_collect: True                          	[default: False]
+               do_collect: False                         
               do_finetune: False                         
                      flip: False                         
-                     half: 0                             
+                     half: 1                             	[default: 0]
+                hr_stride: [2, 2]                        
                        id: test                          
                         k: 9                             
-                       lr: 0.0001                        
-     maml_parameters_path: weights/weights_maml          
+                       lr: 1e-05                         	[default: 0.0001]
          max_dataset_size: None                          
                    metric: angular                       
-                    model: faze                          
-                     name: gaze_estimation               
+                    model: ft                            	[default: faze]
+                     name: ft                            	[default: gaze_estimation]
                   netGaze: regressor                     
                       ngf: 128                           	[default: 128]
               num_threads: 16                            
-               patch_type: faze                          
+               patch_size: [160, 80, 40, 20]             	[default: [56, 28, 14, 7]]
+               patch_type: face                          	[default: faze]
                     phase: train                         
-           pose_estimator: pnp                           
+           pose_estimator: eos                           	[default: pnp]
                preprocess: none                          
                      seed: None                          
                      step: 100                           
-      ted_parameters_path: weights/weights_ted.pth.tar   
+            upsample_size: 640                           	[default: None]
               visual_freq: 400                           
-            visualize_cal: False                         
+            visualize_cal: True                          	[default: False]
            write_features: False                         
 ----------------- End -------------------

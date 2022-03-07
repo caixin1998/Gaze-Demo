@@ -595,11 +595,11 @@ def _hrnet(arch, pretrained, progress, **kwargs):
 
     from modules.hrnet_config import MODEL_CONFIGS
     model = HighResolutionNet(MODEL_CONFIGS[arch], **kwargs)
-    if pretrained:
-        model_url = model_urls[arch]
-        state_dict = load_state_dict_from_url(model_url,
-                                              progress=progress)
-        model.load_state_dict(state_dict, strict=False)
+    # if pretrained:
+    #     model_url = model_urls[arch]
+    #     state_dict = load_state_dict_from_url(model_url,
+    #                                           progress=progress)
+    #     model.load_state_dict(state_dict, strict=False)
     return model
 
 
@@ -623,7 +623,7 @@ def hratp48(pretrained=True, progress=True, **kwargs):
     return _hrnet('hrnet48', pretrained, progress,
                    **kwargs)
 
-def hratp64(pretrained=True, progress=True, **kwargs):
+def hratp64(pretrained=False, progress=True, **kwargs):
     r"""HRNet-48 model
     """
     return _hrnet('hrnet64', pretrained, progress,

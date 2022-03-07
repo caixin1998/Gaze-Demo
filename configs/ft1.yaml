@@ -1,0 +1,17 @@
+model: ft
+# do_collect: False
+name: ft
+backbone: hratp64
+camera_size: [1920, 1080]
+visualize_cal: True
+pose_estimator: eos
+patch_type: 'face'
+half: 1
+ckpt_path: weights/concat_hratp_half.ckpt
+upsample_size: 256
+patch_size: [64, 32, 16, 8]
+atp_merge: transformer
+batch_size: 24
+lr: 0.00001
+k: 64
+step: 200

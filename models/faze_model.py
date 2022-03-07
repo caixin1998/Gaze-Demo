@@ -40,7 +40,7 @@ class FazeModel(BaseModel):
         parser.set_defaults(dataset_mode='aligned')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
         parser.add_argument('--ted_parameters_path', type=str, default='weights/weights_ted.pth.tar', help='ted parameters path')
         parser.add_argument('--maml_parameters_path', type=str, default='weights/weights_maml', help='maml parameters path')
-        parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate for SGD')
+        # parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate for SGD')
         return parser
 
     def __init__(self, opt):
@@ -117,10 +117,25 @@ class FazeModel(BaseModel):
 
     def optimize_parameters(self,input):
         """Update network weights; it will be called in every training iteration."""
-        self(input)               # first call forward to calculate intermediate results
-        self.optimizer.zero_grad()   # clear network G's existing gradients
-        self.backward()              # calculate gradients for network G
-        self.optimizer.step()        # update gradients for network G
+        num_data = len(input["image_a"])
+        train_list = list(range(num_data))
+        # random.shuffle(train_list)
+        start = 0
+        while start  < num_data:
+            batch_input = {}
+            if start + self.opt.batch_size > num_data:
+                end =  num_data
+            else: 
+                end = start + self.opt.batch_size
+            for k, v in input.items():
+                batch_input[k] = v[train_list[start: end],...]
+            start = end
+
+            self(batch_input)               # first call forward to calculate intermediate results
+            self.optimizer.zero_grad()   # clear network G's existing gradients
+            self.backward()              # calculate gradients for network G
+            self.optimizer.step()
+
 
     def test(self, input):
         self(input)
@@ -150,15 +165,19 @@ class FazeModel(BaseModel):
 
         self.netG.load_state_dict(ted_weights)
     def load_networks(self):
-
-        if os.path.isfile(os.path.join(self.opt.cal_weight_path, '%s_faze.pth.tar'%(self.opt.subject))):
-            ted_weights = torch.load(os.path.join(self.opt.cal_weight_path, '%s_faze.pth.tar'%(self.opt.subject)))
+        load_path = os.path.join(self.opt.cal_weight_path, '%s'%(self.opt.subject),'faze.pth.tar')
+        print(load_path)
+        if os.path.isfile(load_path):
+            ted_weights = torch.load(load_path)
             self.netG.load_state_dict(ted_weights)
+            print("> Loading:",load_path)
         else:
             self.load_init_networks()
 
     def save_networks(self, subject):
-        torch.save(self.netG.state_dict(), 'weights/calibration/%s_faze.pth.tar' % subject) 
+        save_path = os.path.join(self.opt.cal_weight_path, '%s'%subject)
+        os.makedirs(save_path, exist_ok= True)
+        torch.save(self.netG.state_dict(), os.path.join(save_path, 'faze.pth.tar'))
 
     def convert_input(self, input):
         data = {
@@ -200,30 +219,22 @@ class FazeModel(BaseModel):
             R_head_a[i, :, :] = data['R_head_a'][i]
 
         # create data subsets
-        train_indices = []
-        for i in range(0, k*10, 10):
-            train_indices.append(random.sample(range(i, i + 10), 3))
-        train_indices = sum(train_indices, [])
 
-        valid_indices = []
-        for i in range(k*10, n - 10, 10):
-            valid_indices.append(random.sample(range(i, i + 10), 1))
-        valid_indices = sum(valid_indices, [])
-
+        
         input_dict_train = {
-            'image_a': img[train_indices, :, :, :],
-            'gaze_a': gaze_a[train_indices, :],
-            'head_a': head_a[train_indices, :],
-            'R_gaze_a': R_gaze_a[train_indices, :, :],
-            'R_head_a': R_head_a[train_indices, :, :],
+            'image_a': img[:3*k, :, :, :],
+            'gaze_a': gaze_a[:3*k, :],
+            'head_a': head_a[:3*k, :],
+            'R_gaze_a': R_gaze_a[:3*k, :, :],
+            'R_head_a': R_head_a[:3*k, :, :],
         }
 
         input_dict_valid = {
-            'image_a': img[valid_indices, :, :, :],
-            'gaze_a': gaze_a[valid_indices, :],
-            'head_a': head_a[valid_indices, :],
-            'R_gaze_a': R_gaze_a[valid_indices, :, :],
-            'R_head_a': R_head_a[valid_indices, :, :],
+            'image_a': img[3*k:, :, :, :],
+            'gaze_a': gaze_a[3*k:, :],
+            'head_a': head_a[3*k:, :],
+            'R_gaze_a': R_gaze_a[3*k:, :, :],
+            'R_head_a': R_head_a[3*k:, :, :],
         }
 
         return input_dict_train, input_dict_valid

@@ -68,7 +68,7 @@ class frame_processor:
                 entry["3d_gaze_target"] = gaze_target
             normalized_entry = normalize(entry, patch_type)
             if patch_type == "face" and self.opt.half == 1:
-                face = normalized_entry["patch"]
+                face = copy.deepcopy(normalized_entry["patch"])
                 nor_pts = self.landmarks_detector.detect([0,0,224,224], cv.cvtColor(face, cv.COLOR_RGB2BGR))
                 y = np.concatenate((nor_pts[42:47],nor_pts[36:41]))[:,1].mean()
                 if 168 > y > 56:

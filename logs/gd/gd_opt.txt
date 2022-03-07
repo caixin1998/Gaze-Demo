@@ -1,0 +1,33 @@
+----------------- Options ---------------
+                atp_merge: transformer                   	[default: add]
+                 backbone: hratp64                       	[default: resnet50]
+                      cal: False                         
+          cal_weight_path: weights/calibration           
+         cal_weights_path: weights/calibration           
+                      cam: False                         
+                  cam_idx: [4]                           
+              camera_size: [1920, 1080]                  
+          checkpoints_dir: ./logs                        
+                ckpt_path: weights/concat_hratp_640_half.ckpt	[default: weights/eve_face.ckpt]
+                   config: configs/gd.yaml               	[default: None]
+             dataset_mode: aligned                       
+            display_patch: True                          
+               do_collect: False                         
+              do_finetune: True                          	[default: False]
+                     half: 1                             	[default: 0]
+                hr_stride: [2, 2]                        
+                       id: test                          
+                        k: 9                             
+                       lr: 0.0001                        
+                    model: gd                            	[default: faze]
+                     name: gd                            	[default: gaze_estimation]
+                  netGaze: regressor                     
+                      ngf: 128                           	[default: 128]
+               patch_size: [160, 80, 40, 20]             	[default: [56, 28, 14, 7]]
+               patch_type: face                          	[default: faze]
+           pose_estimator: eos                           	[default: pnp]
+                     seed: None                          
+            upsample_size: 640                           	[default: None]
+            visualize_cal: True                          	[default: False]
+           write_features: False                         
+----------------- End -------------------

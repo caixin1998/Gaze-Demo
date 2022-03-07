@@ -1,6 +1,6 @@
-model: gd
+model: ft
 # do_collect: False
-name: gd
+name: ft
 backbone: hratp64
 camera_size: [1920, 1080]
 visualize_cal: True
@@ -11,3 +11,7 @@ ckpt_path: weights/concat_hratp_640_half.ckpt
 upsample_size: 640
 patch_size: [160, 80, 40, 20]
 atp_merge: transformer
+batch_size: 6
+lr: 0.00001
+k: 9
+step: 100

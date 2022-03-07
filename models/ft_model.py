@@ -26,7 +26,7 @@ import torchvision
 sys.path.append("../src")
 from utils import calculate_rotation_matrix
 from tensor_utils import vector_to_pitchyaw
-class GDModel(BaseModel):
+class FTModel(BaseModel):
     @staticmethod
     def modify_commandline_options(parser):
         """Add new model-specific options and rewrite default values for existing options.
@@ -78,11 +78,14 @@ class GDModel(BaseModel):
             # define and initialize optimizers. You can define one optimizer for each network.
             # If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
         self.optimizer = torch.optim.SGD(
-                [p for n, p in self.netG.named_parameters() if n.startswith('gaze')],
+                [p for n, p in self.netG.named_parameters() if n.startswith('gaze_fc')],
                 lr=self.opt.lr,
             )
+        
+        for n, p in self.netG.named_parameters():
+            if not n.startswith('gaze_fc'):
+                p.requires_grad = False
 
-        self.shift = None
 
         # self.optimizers = [self.optimizer]
 
@@ -107,8 +110,6 @@ class GDModel(BaseModel):
         # torchvision.utils.save_image(input['face'], "test.png")
         
         self.output = self.netG(self.input)  
-        if self.shift is not None:
-            self.output["pred"] += self.shift
         self.output["gaze"] = self.output["pred"]
         return self.output
 
@@ -126,13 +127,28 @@ class GDModel(BaseModel):
         # self.backward()              # calculate gradients for network G
         # self.optimizer.step()
         # update gradients for network G
-        for k, v in input.items():
-            input[k] = v[:,...]
-        with torch.no_grad():
-            self(input)
-        shift =  input["gaze"] - self.output["pred"]
-        self.shift = torch.mean(shift, dim = 0)[None,...]
-        print(self.shift)
+
+        num_data = len(input["face"])
+        train_list = list(range(num_data))
+        random.shuffle(train_list)
+        start = 0
+
+        while start  < num_data:
+            batch_input = {}
+            if start + self.opt.batch_size > num_data:
+                end =  num_data
+            else: 
+                end = start + self.opt.batch_size
+            for k, v in input.items():
+                batch_input[k] = v[train_list[start: end],...]
+
+            self(batch_input)               # first call forward to calculate intermediate results
+            self.optimizer.zero_grad()   # clear network G's existing gradients
+            self.backward()              # calculate gradients for network G
+            self.optimizer.step()
+
+            start = end
+
     def test(self, input):
         with torch.no_grad():
             self(input)
@@ -144,13 +160,22 @@ class GDModel(BaseModel):
         ckpt = torch.load(self.opt.ckpt_path)
         weights = dict([(k[:], v) for k, v in ckpt['state_dict'].items()])
         self.netG.load_state_dict(weights)
-
+        
     def load_networks(self):
-        self.load_init_networks()
+        load_path = os.path.join(self.opt.cal_weight_path, '%s'%(self.opt.subject),self.opt.ckpt_path.split('/')[-1])
+        print(load_path)
+        if os.path.isfile(load_path):
+            ted_weights = torch.load(load_path)
+            self.netG.load_state_dict(ted_weights)
+            print("> Loading:",load_path)
+        else:
+            self.load_init_networks()
 
     def save_networks(self, subject):
-        pass
-        # torch.save(self.netG.state_dict(), 'weights/calibration/%s_faze.pth.tar' % subject) 
+        # pass
+        save_path = os.path.join(self.opt.cal_weight_path, '%s'%subject)
+        os.makedirs(save_path, exist_ok= True)
+        torch.save(self.netG.state_dict(), os.path.join(save_path, self.opt.ckpt_path.split('/')[-1]))
 
     def convert_input(self, input):
         data = {
@@ -178,15 +203,24 @@ class GDModel(BaseModel):
             img[i, :, :, :] = data['face'][i]
             gaze_a[i, :] = data['gaze'][i]
 
+        # create data subsets
+        train_indices = []
+        for i in range(0, k*10, 10):
+            train_indices.append(random.sample(range(i, i + 10), 1))
+        train_indices = sum(train_indices, [])
 
+        valid_indices = []
+        for i in range(k*10, n - 10, 10):
+            valid_indices.append(random.sample(range(i, i + 10), 1))
+        valid_indices = sum(valid_indices, [])
         input_dict_train = {
-            'face': img[:3*k, :, :, :],
-            'gaze': gaze_a[:3*k, :],
+            'face': img[train_indices, :, :, :],
+            'gaze': gaze_a[train_indices, :],
         }
 
         input_dict_valid = {
-            'face': img[3*k:, :, :, :],
-            'gaze': gaze_a[3*k:, :],
+            'face': img[valid_indices, :, :, :],
+            'gaze': gaze_a[valid_indices, :],
         }
 
         return input_dict_train, input_dict_valid
