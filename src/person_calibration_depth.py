@@ -182,7 +182,7 @@ class GrabRealsense(threading.Thread):
         while THREAD_RUNNING:
             # tic = time.time()
             rs_frames = self.real.pipeline.wait_for_frames()
-            # rs_frames = self.real.align.process(rs_frames)
+            rs_frames = self.real.align.process(rs_frames)
             depth_frame = rs_frames.get_depth_frame()
             color_frame = rs_frames.get_color_frame()
             for j in range(len(self.caps)):
@@ -190,11 +190,13 @@ class GrabRealsense(threading.Thread):
                 if j == 1:
                     frame = cv.flip(frame, -1)
                 frames[j].append(frame)
-                # if j == 0:
-                #     ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
-                #     if ret_face:
-                #         for key, value in normalized_entry.items():
-                #             add_kv(data[j], key, value)
+                if j == 0:
+                    ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
+                    if ret_face:
+                        # for key, value in normalized_entry.items():
+                        #     add_kv(data[j], key, value, 1)
+                        print("For cam%d, the gaze_cam_origin is "%0,\
+                normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
 
             if not depth_frame or not color_frame:
                 continue
@@ -209,6 +211,34 @@ class GrabRealsense(threading.Thread):
             # print(time.time() - tic)
 
         # self.real.pipeline.stop()    
+
+class GrabImg(threading.Thread):
+    def __init__(self, opt, cam_calibs, queues):
+        super(GrabImg, self).__init__()
+        self.processors = []
+        for j in range(len(opt.cam_idx)):
+            self.processors.append(frame_processor(opt, cam_calibs[j]))
+        self.queues = queues
+    def run(self):
+        global THREAD_RUNNING
+        global frames, data, rs_data, g_t
+        while THREAD_RUNNING:
+            for j in range(len(self.processors)):
+                frame =  self.queues[j].get()
+                if j == 1:
+                    frame["frame"] = cv.flip(frame["frame"], -1)
+                frames[j].append(frame)
+                # if j == 0:
+                #     ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
+                #     if ret_face:
+                #         for key, value in normalized_entry.items():
+                #             add_kv(data[j], key, value, 1)
+                #         print("For cam%d, the gaze_cam_origin is "%0,\
+                # normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
+            rs_data["depth"].append(self.queues[-4].get())
+            rs_data["color"].append(self.queues[-3].get())
+            rs_data["depth_colormap"].append(self.queues[-2].get())
+            rs_data["time"].append(self.queues[-1].get())
 
 # class GrabImg(threading.Thread):
 #     def __init__(self, processor, idx, cap, mutex):
@@ -250,26 +280,25 @@ class GrabRealsense(threading.Thread):
 #                 normalized_entry["gaze_cam_origin"],flush=True)
 
 
-def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False):
+def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False):
     global THREAD_RUNNING
     global frames, data, g_t, rs_data
     num_image_per_point = opt.num_image_per_point
     results = []
     data = {}
     frames = {}
-    real = RealSense()
     
     # mutex = threading.Lock()
 
-    num_cap = len(caps)
-    save_data = {'g_t': [], "depth": [], "color": [], "depth_colormap": []}
+    num_cap = len(opt.cam_idx)
+    save_data = {'g_t': [], "depth": [], "color": [], "depth_colormap": [], "time": []}
     for j in range(num_cap):
         save_data["frame%ds"%j] = []
         data[j] = {}
         frames[j] = []
         results.append({})
 
-    rs_data = {"depth": [], "color": [], "depth_colormap": []}
+    rs_data = {"depth": [], "color": [], "depth_colormap": [], "time": []}
         # th = GrabImg(opt, cam_calibs[j], j, caps[j], mutex)
         # ths.append(th)
     cv.namedWindow("image", cv.WINDOW_NORMAL)
@@ -278,7 +307,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
         i = 0
   
         while i < point_num:
-            th = GrabRealsense(opt, cam_calibs, real, caps)
+            th = GrabImg(opt, cam_calibs, queues)
                 
             # Start the sub-thread, which is responsible for grabbing images
             THREAD_RUNNING = True
@@ -288,7 +317,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 frames[j] = []
             
                 data[j] = {}
-            rs_data = {"depth": [], "color": [], "depth_colormap": []}
+            rs_data = {"depth": [], "color": [], "depth_colormap": [],"time": []}
             th.start()
             cv.imshow('image', img)
             key_press = cv.waitKey(2000)
@@ -317,6 +346,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 save_data['depth'].append(rs_data["depth"])
                 save_data['color'].append(rs_data["color"])
                 save_data['depth_colormap'].append(rs_data["depth_colormap"])
+                save_data['time'].append(rs_data["time"])
 
                 img, g_t = create_image(mon, direction, i, (0,  0, 255), thickness = 4,  grid = 1 - stage, total=point_num, use_last = True)
                 cv.imshow('image', img)
@@ -346,18 +376,21 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
         os.makedirs(img_path, exist_ok=True)
     
     target = []
+    times = np.zeros((len(save_data["g_t"]) * num_image_per_point, len(opt.cam_idx) + 1))
     for j in range(num_cap):
         n = 0 
         for index, frames_ in enumerate(save_data['frame%ds'%j]):
-            # print(j, index, len(frames_))
+            print(j, index, len(frames_))
             for k in range(len(frames_) - num_image_per_point, len(frames_)):
                 if j == 0:
                     target.append(save_data["g_t"][index])
                 frame = frames_[k]
-                cv.imwrite(os.path.join(img_paths[j],"%05d.png"%n), frame)
+                cv.imwrite(os.path.join(img_paths[j],"%05d.png"%n), frame["frame"])
+                times[n,j] = frame["time"]
                 n += 1
 
     for key in rs_data.keys():
+
         n = 0 
         save_path = 'calibration/%s/%s/%s'%(opt.id, subject, key)
         os.makedirs(save_path,exist_ok= True)
@@ -367,13 +400,15 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 frame = frames_[k]
                 if key == "depth":
                     np.save(os.path.join(save_path,"%05d.npy"%n), frame)
+                elif key == "time":
+                    times[n,-1] = frame
                 else:
                     cv.imwrite(os.path.join(save_path,"%05d.png"%n), frame)
                 n += 1
 
-    fout = open('calibration/%s/%s/calib_target.pkl' %(opt.id, subject), 'wb')
-    pickle.dump(target, fout)
-    fout.close()
+    with open('calibration/%s/%s/calib_target.pkl' %(opt.id, subject), 'wb') as fout: 
+        pickle.dump(target, fout)
+    np.savetxt('calibration/%s/%s/times.txt' %(opt.id, subject), times, fmt="%.3f")
     return results[0]
 
 

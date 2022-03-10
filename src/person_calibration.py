@@ -162,7 +162,8 @@ def grab_img(processor, idx, cap):
             for key, value in normalized_entry.items():
                 add_kv(data[idx], key, value)
             normalized_entry["gaze_cam_origin"][2,0] -= 10 
-            print("For cam%d, the gaze_cam_origin is "%idx,\
+            if idx == 0:
+                print("For cam%d, the gaze_cam_origin is "%idx,\
                 normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
 
 # def grab_img1(cap, core):

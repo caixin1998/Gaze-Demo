@@ -70,7 +70,7 @@ class process_core:
         # self.labels = cam_calib['face_g']
         # print(self.labels)
     
-    def process(self, queues, processes, gaze_network):
+    def process(self, queues, gaze_network):
         # rets, imgs = [], []
         gaze_network.eval()
         frame_idx = 0
@@ -78,7 +78,7 @@ class process_core:
         while break_mark == 0:
             imgs = []
             for queue in queues:
-                imgs.append(queue.get())
+                imgs.append(queue.get()["frame"])
             ret_faces = []
             normalized_entries = {}
             for i, img in enumerate(imgs):
@@ -179,7 +179,7 @@ class process_core:
             train_indices = sum(train_indices, [])
 
             valid_indices = []
-            for i in range(k*10, len(imgs_list) - num_image_per_point, num_image_per_point):
+            for i in range(k*num_image_per_point, len(imgs_list) - num_image_per_point, num_image_per_point):
                 valid_indices.append(random.sample(range(i, i + num_image_per_point), 1))
             valid_indices = sum(valid_indices, [])
             indices = train_indices + valid_indices

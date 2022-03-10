@@ -22,7 +22,8 @@ from person_calibration_depth import collect_data, fine_tune
 from core import process_core
 from models import create_model
 import multiprocessing as mp
-
+import pyrealsense2 as rs
+import time
 #################################
 # Start camera
 #################################
@@ -36,11 +37,56 @@ def image_put(cam_idx, camera_size, q):
         while cap.isOpened():
             # print('cap.read()[0]:', cap.read()[0])
             ret, frame = cap.read()
+
             # print('ret:', ret)
             if ret:
-                q.put(frame)
-            # print('q.qsize():', q.qsize())
+                q.put({"frame":frame, "time": time.time()})
                 q.get() if q.qsize() > 1 else time.sleep(0.01)
+
+def depth_put(queues, depth_shape = (1280,720)):
+        pipeline = rs.pipeline()
+        config = rs.config()
+
+        pipeline_wrapper = rs.pipeline_wrapper(pipeline)
+        pipeline_profile = config.resolve(pipeline_wrapper)
+        device = pipeline_profile.get_device()
+        device_product_line = str(device.get_info(rs.camera_info.product_line))
+        align_to = rs.stream.color
+        align = rs.align(align_to)
+        found_rgb = False
+        for s in device.sensors:
+            if s.get_info(rs.camera_info.name) == 'RGB Camera':
+                found_rgb = True
+                break
+        if not found_rgb:
+            print("The demo requires Depth camera with color sensor")
+            exit(0)
+
+        config.enable_stream(rs.stream.depth, depth_shape[0], depth_shape[1], rs.format.z16, 30)
+        config.enable_stream(rs.stream.color, depth_shape[0], depth_shape[1], rs.format.bgr8, 30)
+        pipeline.start(config)
+
+        while True:
+            rs_frames = pipeline.wait_for_frames()
+            rs_frames = align.process(rs_frames)
+            depth_frame = rs_frames.get_depth_frame()
+            color_frame = rs_frames.get_color_frame()
+
+            if not depth_frame or not color_frame:
+                continue
+            # Convert images to numpy arrays
+            depth_image = np.array(depth_frame.get_data())
+            color_image = np.array(color_frame.get_data())
+            depth_colormap = cv.applyColorMap(cv.convertScaleAbs(depth_image, alpha=0.03), cv.COLORMAP_JET)
+            queues[0].put(depth_image)
+            queues[1].put(color_image)
+            queues[2].put(depth_colormap)
+            queues[3].put(time.time())
+
+            for q in queues:
+                q.get() if q.qsize() > 1 else time.sleep(0.01)
+
+
 if __name__ == '__main__':
     opt = FinetuneOptions().parse() 
 
@@ -63,12 +109,32 @@ if __name__ == '__main__':
             cam_calibrate(cam_idx, cam_caps[i], cam_calib)
         cam_calibs += [cam_calib]
 
+    for cap in cam_caps:
+        cap.release()
 
+    mp.set_start_method(method='spawn')
+    queues = [mp.Queue(maxsize=2) for _ in opt.cam_idx]
+    processes = []
+    for queue, cam_id in zip(queues, opt.cam_idx):
+        processes.append(mp.Process(target=image_put, args=(cam_id, opt.camera_size, queue)))
+    if opt.depth:
+        queues += [mp.Queue(maxsize=2) for _ in range(4)]
+        processes.append(mp.Process(target=depth_put, args=(queues[-4:],)))
+    for process in processes:
+        process.daemon = True
+        process.start()
     # collect person calibration data and fine-
     # tune gaze network
     subject = input('Enter subject name: ')
+
     subject += "+%d"%opt.k
     opt.subject = subject
+
+    # position = input('Enter your position (x y z) :')
+    # with open('calibration/%s/%s/position.txt' %(opt.id, subject), 'w') as f:
+    #      f.write(position) 
+
+
     # calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
     data = None
     model = create_model(opt)
@@ -76,27 +142,18 @@ if __name__ == '__main__':
     core = process_core(opt, cam_calibs)
 
     if opt.do_collect:
-        data = collect_data(subject, cam_caps, mon, opt, cam_calibs, calib_points=opt.k, rand_points=5, view_collect = False)
+        data = collect_data(subject, queues, mon, opt, cam_calibs, calib_points=opt.k, rand_points=5, view_collect = False)
 
     if opt.do_finetune or opt.do_collect:
         model = fine_tune(opt, data, core, model, steps = opt.step)
     else:
         model.load_networks()
 
-    for cap in cam_caps:
-        cap.release()
+
     #################################
     # Run on live webcam feed and
     # show point of regard on screen
     #################################
     
-    mp.set_start_method(method='spawn')
-    queues = [mp.Queue(maxsize=2) for _ in opt.cam_idx]
-    processes = []
-    for queue, cam_id in zip(queues, opt.cam_idx):
-        processes.append(mp.Process(target=image_put, args=(cam_id, opt.camera_size, queue)))
-    for process in processes:
-        process.daemon = True
-        process.start()
-    
-    core.process(queues, processes, model)
+
+    core.process(queues, model)
