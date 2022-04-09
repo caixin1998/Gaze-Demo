@@ -42,7 +42,7 @@ def image_put(cam_idx, camera_size, q):
             # print('ret:', ret)
             if ret:
                 q.put({"frame":frame, "time": time.time()})
-                q.get() if q.qsize() > 1 else time.sleep(0.01)
+                # q.get() if q.qsize() > 1 else time.sleep(0.01)
 
 def depth_put(queues, depth_shape = (1280,720)):
         pipeline = rs.pipeline()
@@ -123,12 +123,12 @@ if __name__ == '__main__':
         cap.release()
 
     mp.set_start_method(method='spawn')
-    queues = [mp.Queue(maxsize=2) for _ in opt.cam_idx]
+    queues = [mp.Queue(maxsize=200) for _ in opt.cam_idx]
     processes = []
     for queue, cam_id in zip(queues, opt.cam_idx):
         processes.append(mp.Process(target=image_put, args=(cam_id, opt.camera_size, queue)))
     if opt.depth:
-        queues += [mp.Queue(maxsize=2) for _ in range(3)]
+        queues += [mp.Queue(maxsize=200) for _ in range(3)]
         processes.append(mp.Process(target=depth_put, args=(queues[-3:],)))
     for process in processes:
         process.daemon = True

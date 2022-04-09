@@ -76,6 +76,8 @@ class process_core:
         frame_idx = 0
         break_mark = 0
         while break_mark == 0:
+            tic = time.time() 
+
             imgs = []
             for queue in queues:
                 imgs.append(queue.get()["frame"])
@@ -84,7 +86,8 @@ class process_core:
             for i, img in enumerate(imgs):
                 ret_face, normalized_entry, patch_img = self.processors[i](img)
                 ret_faces.append(ret_face)
-         
+                print("normalized time: ", time.time() - tic)
+                tic = time.time()
                 #TODO:convert_input for muti-cam.
             # print(normalized_entries["gaze_cam"], normalized_entry)
                 if np.all(ret_faces):
@@ -92,7 +95,7 @@ class process_core:
                         add_kv(normalized_entries, key, value)
                     model_input = gaze_network.convert_input(normalized_entry)
                     output_dict = gaze_network(model_input)
-
+                    print("inference time: ", time.time() - tic)
                     # gaze_network.trans_totensor(normalized_entry)
                     self.calculate_pog_with_g(normalized_entry, output_dict)
 

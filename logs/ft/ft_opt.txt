@@ -7,7 +7,7 @@
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
                       cam: False                         
-                  cam_idx: [4]                           
+                  cam_idx: [6]                           	[default: [6, 8]]
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
                 ckpt_path: weights/concat_hratp_640_half.ckpt	[default: weights/eve_face.ckpt]
@@ -16,13 +16,14 @@
                  dataroot: /home/caixin/GazeData/xgaze_224
                   dataset: xgaze                         
              dataset_mode: aligned                       
+                    depth: True                          
             display_patch: True                          
                do_collect: False                         
               do_finetune: False                         
                      flip: False                         
                      half: 1                             	[default: 0]
                 hr_stride: [2, 2]                        
-                       id: test                          
+                       id: 3                             	[default: 0]
                         k: 9                             
                        lr: 1e-05                         	[default: 0.0001]
          max_dataset_size: None                          
@@ -31,11 +32,12 @@
                      name: ft                            	[default: gaze_estimation]
                   netGaze: regressor                     
                       ngf: 128                           	[default: 128]
+      num_image_per_point: 30                            
               num_threads: 16                            
                patch_size: [160, 80, 40, 20]             	[default: [56, 28, 14, 7]]
                patch_type: face                          	[default: faze]
                     phase: train                         
-           pose_estimator: eos                           	[default: pnp]
+           pose_estimator: eos                           
                preprocess: none                          
                      seed: None                          
                      step: 100                           

@@ -11,6 +11,7 @@ from normalization import normalize
 from utils import preprocess_image
 import copy
 import cv2 as cv
+import time
 import numpy as np
 class frame_processor:
     def __init__(self, opt, cam_calib):
@@ -34,10 +35,12 @@ class frame_processor:
         elif opt.pose_estimator == "eos":
             self.head_pose_estimator = HeadPoseEstimator()
     def __call__(self, img, gaze_target = None):
+        tic = time.time()
         patch_type = self.opt.patch_type
         img = self.undistorter.apply(img)
         face_location = self.face.detect(img,  scale=0.25, use_max='SIZE')
-
+        # print("face detect time: ", time.time() - tic)
+        tic = time.time()
         if len(face_location) > 0:
                 # use kalman filter to smooth bounding box position
                 # assume work with complex numbers:
@@ -49,7 +52,8 @@ class frame_processor:
                 # detect facial points
             pts = self.landmarks_detector.detect(face_location, img)
                 # run Kalman filter on landmarks to smooth them
-            
+            # print("landmarks_detector time: ", time.time() - tic)
+            tic = time.time()
             for i in range(68):
                 kalman_filters_landm_complex = self.kalman_filters_landm[i].update(pts[i, 0] + 1j * pts[i, 1])
                 pts[i, 0], pts[i, 1] = np.real(kalman_filters_landm_complex), np.imag(kalman_filters_landm_complex)
@@ -58,6 +62,8 @@ class frame_processor:
             camera_parameters = np.asarray([fx, fy, cx, cy])
             # print(img.shape, pts, camera_parameters)
             rvec, tvec, o_3d = self.head_pose_estimator(img, pts, camera_parameters)
+            print("head_pose estimate time: ", time.time() - tic)
+            tic = time.time()
             head_pose = (rvec, tvec)
             entry = {}
             entry["full_frame"] = img
@@ -77,11 +83,14 @@ class frame_processor:
                 else:
                     face = face[:112,...]
                 normalized_entry["patch"] = face
+      
             patch_img = copy.deepcopy(normalized_entry["patch"])
             normalized_entry["patch"] = preprocess_image(normalized_entry["patch"])
             ycrcb = cv.cvtColor(patch_img, cv.COLOR_RGB2YCrCb) 
             ycrcb[:, :, 0] = cv.equalizeHist(ycrcb[:, :, 0])
             patch_img = cv.cvtColor(ycrcb, cv.COLOR_YCrCb2BGR)
+            print("preprocess_image time: ", time.time() - tic)
+            tic = time.time()
             return True, normalized_entry, patch_img
         else:
 

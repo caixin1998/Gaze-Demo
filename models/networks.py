@@ -673,33 +673,33 @@ class GazeNetwork(nn.Module):
         self.opt = opt
 
         if opt.backbone == "resnet50":
-            self.model = resnet50(pretrained=True)
+            self.model = resnet50(pretrained=False)
         elif opt.backbone == "resnet18":
-            self.model = resnet18(pretrained=True)
+            self.model = resnet18(pretrained=False)
         elif opt.backbone == "resnetx50":
-            self.model = resnetx50(pretrained=True)
+            self.model = resnetx50(pretrained=False)
         elif opt.backbone == "hrnet18":
-            self.model = hrnet18(pretrained=True)
+            self.model = hrnet18(pretrained=False)
         elif opt.backbone == "hrnet32":
-            self.model = hrnet32(pretrained=True)
+            self.model = hrnet32(pretrained=False)
         elif opt.backbone == "hrnet48":
-            self.model = hrnet48(pretrained=True, stride = self.opt.hr_stride)
+            self.model = hrnet48(pretrained=False, stride = self.opt.hr_stride)
         elif opt.backbone == "hrnet64":
-            self.model = hrnet64(pretrained=True, stride = self.opt.hr_stride)
+            self.model = hrnet64(pretrained=False, stride = self.opt.hr_stride)
         elif opt.backbone == "hratp18":
-            self.model = hratp18(pretrained=True, merge = self.opt.atp_merge)
+            self.model = hratp18(pretrained=False, merge = self.opt.atp_merge)
         elif opt.backbone == "hratp32":
-            self.model = hratp32(pretrained=True, merge = self.opt.atp_merge)
+            self.model = hratp32(pretrained=False, merge = self.opt.atp_merge)
         elif opt.backbone == "hratp48":
-            self.model = hratp48(pretrained=True, merge = self.opt.atp_merge)
+            self.model = hratp48(pretrained=False, merge = self.opt.atp_merge)
         elif opt.backbone == "hratp64":
-            self.model = hratp64(pretrained=True,  stride = self.opt.hr_stride, patch_size = self.opt.patch_size, merge = self.opt.atp_merge, half = self.opt.half)
+            self.model = hratp64(pretrained=False,  stride = self.opt.hr_stride, patch_size = self.opt.patch_size, merge = self.opt.atp_merge, half = self.opt.half)
         elif opt.backbone == "convnext_base":
-            self.model = convnext_base(pretrained=True, in_22k = True)
+            self.model = convnext_base(pretrained=False, in_22k = True)
         elif opt.backbone == "convnext_large":
-            self.model = convnext_large(pretrained=True, in_22k = True)
+            self.model = convnext_large(pretrained=False, in_22k = True)
         elif opt.backbone == "convnext_xlarge":
-            self.model = convnext_xlarge(pretrained=True, in_22k = True)
+            self.model = convnext_xlarge(pretrained=False, in_22k = True)
         self.gaze_fc = nn.Sequential(
             nn.Linear(2048, opt.ngf),
             nn.ReLU(inplace = True),

@@ -3,7 +3,7 @@
 # Licensed under the MIT License.
 # Written by RainbowSecret (yhyuan@pku.edu.cn)
 # ------------------------------------------------------------------------------
-
+import time
 import os
 import logging
 import torch
@@ -11,7 +11,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.model_zoo import load_url as load_state_dict_from_url
 import numpy as np
+import sys
+sys.path.append("..")
 from modules.atp import ATP
+# from atp import ATP
+
 logger = logging.getLogger('hrnet_backbone')
 
 __all__ = ['hratp18', 'hratp32', 'hratp48', 'hratp64']
@@ -595,11 +599,11 @@ def _hrnet(arch, pretrained, progress, **kwargs):
 
     from modules.hrnet_config import MODEL_CONFIGS
     model = HighResolutionNet(MODEL_CONFIGS[arch], **kwargs)
-    # if pretrained:
-    #     model_url = model_urls[arch]
-    #     state_dict = load_state_dict_from_url(model_url,
-    #                                           progress=progress)
-    #     model.load_state_dict(state_dict, strict=False)
+    if pretrained:
+        model_url = model_urls[arch]
+        state_dict = load_state_dict_from_url(model_url,
+                                              progress=progress)
+        model.load_state_dict(state_dict, strict=False)
     return model
 
 
@@ -623,7 +627,7 @@ def hratp48(pretrained=True, progress=True, **kwargs):
     return _hrnet('hrnet48', pretrained, progress,
                    **kwargs)
 
-def hratp64(pretrained=False, progress=True, **kwargs):
+def hratp64(pretrained=True, progress=True, **kwargs):
     r"""HRNet-48 model
     """
     return _hrnet('hrnet64', pretrained, progress,
@@ -631,7 +635,13 @@ def hratp64(pretrained=False, progress=True, **kwargs):
 
         
 if __name__ == '__main__':
-    input = torch.rand(32,3,224,224)
-    net = hratp48(pretrained=False)
-    out = net(input)
-    print(out.shape)
+    torch.backends.cudnn.benchmark = True
+    input = torch.rand(1,3,224,224)
+    input = input.cuda()
+    net = hratp64(pretrained=False)
+    net.cuda()
+    tic = time.time()
+    for i in range(1000):
+        out = net(input)
+    print((time.time() - tic) / 1000)
+    # print(out.shape)

@@ -99,8 +99,9 @@ def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E'
         x , y = last[0], last[1]
 
     # compute the ground truth point of regard
-    g_t = mon.monitor_to_camera(x, y)
-    
+    # g_t = mon.monitor_to_camera(x, y)
+
+    g_t = np.array([x,y])
 
     font = cv.FONT_HERSHEY_SIMPLEX
     img = np.ones((h, w, 3), np.float32)
@@ -111,9 +112,11 @@ def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E'
 
     if direction == 'r' or direction == 'l':
         if direction == 'r':
-            cv.putText(img, target, (x, y), font, size, color, thickness, cv.LINE_AA)
+            # cv.circle(img, (x,y),10, (255,0,0),-1)
+            cv.putText(img, target, (x-5, y + 5), font, size, color, thickness, cv.LINE_AA)
         elif direction == 'l':
-            cv.putText(img, target, (w - x, y), font, size, color, thickness, cv.LINE_AA)
+            # cv.circle(img, (w - x, y),10, (255,0,0),-1)
+            cv.putText(img, target, (w - x - 5, y + 5), font, size, color, thickness, cv.LINE_AA)
             img = cv.flip(img, 1)
     elif direction == 'u' or direction == 'd':
         imgT = np.ones((w, h, 3), np.float32)
@@ -122,9 +125,11 @@ def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E'
         imgT[...,2] = 199. / 255.
 
         if direction == 'd':
-            cv.putText(imgT, target, (y, x), font, size, color, thickness, cv.LINE_AA)
+            # cv.circle(imgT, (y,x),10, (255,0,0),-1)
+            cv.putText(imgT, target, (y - 5, x + 5), font, size, color, thickness, cv.LINE_AA)
         elif direction == 'u':
-            cv.putText(imgT, target, (h - y, x), font, size, color, thickness, cv.LINE_AA)
+            # cv.circle(imgT, (h-y,x),10, (255,0,0),-1)
+            cv.putText(imgT, target, (h - y - 5, x + 5), font, size, color, thickness, cv.LINE_AA)
             imgT = cv.flip(imgT, 1)
         img = imgT.transpose((1, 0, 2))
 
@@ -191,6 +196,8 @@ def write_video_process(cap_id, collect, queue, video_path):
         ffmpeg
         .input('pipe:', v=0, hide_banner=None, nostats=None, vsync="passthrough", r=30, format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(1920, 1080))
         .output(save_path, vcodec='h264_nvenc', preset='hq', profile='main', crf=0, video_bitrate='10M')
+        # .output(save_path, vcodec='libx264')
+
         .overwrite_output()
         .run_async(pipe_stdin=True)
     )
@@ -266,7 +273,9 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
     num_cap = len(opt.cam_idx)
     collect =  mp.Value("i", 1)
     processes = []   
+    # img_path = '/home/caixin/nas_data/VIPLIIGaze/calibration/%s/%s'%(opt.id, subject)
     img_path = 'calibration/%s/%s'%(opt.id, subject)
+
     os.makedirs(img_path, exist_ok=True)
     for j in range(num_cap):
         processes.append(mp.Process(target = write_video_process, args = (j,collect,queues[j],img_path,)))

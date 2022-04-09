@@ -21,6 +21,7 @@ SOFTWARE.
 """
 
 import os
+from time import time
 import cv2 as cv
 import eos
 import numpy as np
@@ -160,6 +161,7 @@ class HeadPoseEstimator(object):
 
     def __call__(self, frame, landmarks, camera_parameters, target_io_dist=None, visualize=False):
         # Fit morphable SfM model
+        # tic = time()
         h, w, _ = frame.shape
         [
             eos_mesh, eos_pose, eos_shape_coeffs, eos_blendshape_coeffs
@@ -180,7 +182,7 @@ class HeadPoseEstimator(object):
             self.head_pose_fit(landmarks, eos_mesh, intrinsics, scaling_factor)
         # for k, v in o_3d.items():
         #     o_2d[k] = cv.projectPoints(v, rvec, tvec, intrinsics, None)[0].reshape(2)
-
+        # print("head_pose_fit time:", time() - tic)
         # Transform gaze origins into the camera coordinate system
         transform = np.asmatrix(np.eye(4))
         transform[:3, :3] = cv.Rodrigues(rvec)[0]
