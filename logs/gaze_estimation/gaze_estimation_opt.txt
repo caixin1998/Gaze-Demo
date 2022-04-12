@@ -6,7 +6,7 @@
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
                       cam: False                         
-                  cam_idx: [6, 8]                        
+                  cam_idx: [3, 4]                        
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
                    config: None                          
@@ -20,7 +20,7 @@
               do_finetune: False                         
                      flip: False                         
                      half: 0                             
-                       id: 0                             
+                       id: 4                             	[default: 0]
                         k: 9                             
                        lr: 0.0001                        
      maml_parameters_path: weights/weights_maml          

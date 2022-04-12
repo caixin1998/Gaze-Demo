@@ -6,26 +6,24 @@
 # Code written by Shalini De Mello.
 # --------------------------------------------------------
 
-import gi.repository
-gi.require_version('Gdk', '3.0')
-from gi.repository import Gdk
+
 import numpy as np
 
 class monitor:
 
     def __init__(self, opt):
-        display = Gdk.Display.get_default()
-        screen = display.get_default_screen()
-        default_screen = screen.get_default()
-        num = default_screen.get_number()
+        # display = Gdk.Display.get_default()
+        # screen = display.get_default_screen()
+        # default_screen = screen.get_default()
+        # num = default_screen.get_number()
 
-        self.h_mm = default_screen.get_monitor_height_mm(num)
-        self.w_mm = default_screen.get_monitor_width_mm(num)
+        self.h_mm = 286
+        self.w_mm = 508
         self.h_pixels = 1080
         self.w_pixels = 1920
 
         self.pixels_per_millimeter = (self.w_pixels / self.w_mm,  self.h_pixels / self.h_mm)
-        self.inv_camera_transformation = np.loadtxt("/home/caixin/tnm-opencv/data/%s/cam%s/opt.txt"%(opt.id, opt.cam_idx[0]), delimiter = ',')
+        # self.inv_camera_transformation = np.loadtxt("/home/caixin/tnm-opencv/data/%s/cam%s/opt.txt"%(opt.id, opt.cam_idx[0]), delimiter = ',')
         # self.inv_camera_transformation = np.eye(4)
         # self.inv_camera_transformation[:3,3] = np.array([271, -24, 0]) # from camera to monitor 
         # self.inv_camera_transformation[0][0] = -1
@@ -43,7 +41,7 @@ class monitor:
         return pog_cam[:3]
 
 if __name__ == "__main__":
-    mon = monitor()
+    mon = monitor(1)
     print(mon.h_mm)
     print(mon.w_mm)
     # print(mon.h_mm)
