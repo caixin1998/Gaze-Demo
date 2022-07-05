@@ -1,33 +1,48 @@
 ----------------- Options ---------------
                 atp_merge: transformer                   	[default: add]
                  backbone: hratp64                       	[default: resnet50]
-                      cal: False                         
+               batch_size: 64                            
+                    beta1: 0.5                           
+                      cal: 0                             
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
-                      cam: False                         
-                  cam_idx: [4]                           
+                      cam: 0                             
+                  cam_idx: [0]                           	[default: [3, 4]]
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
-                ckpt_path: weights/concat_hratp_640_half.ckpt	[default: weights/eve_face.ckpt]
+                ckpt_path: weights/hratp_640_half_vipl_all.ckpt	[default: weights/eve_face.ckpt]
                    config: configs/gd.yaml               	[default: None]
+                criterion: smoothl1                      
+                 dataroot: /home/caixin/GazeData/xgaze_224
+                  dataset: xgaze                         
              dataset_mode: aligned                       
-            display_patch: True                          
-               do_collect: False                         
-              do_finetune: True                          	[default: False]
+                    depth: 0                             	[default: True]
+            display_patch: 1                             
+               do_collect: 0                             
+              do_finetune: 1                             	[default: 0]
+                     flip: False                         
                      half: 1                             	[default: 0]
                 hr_stride: [2, 2]                        
-                       id: test                          
+                       id: 5                             	[default: 0]
                         k: 9                             
                        lr: 0.0001                        
+         max_dataset_size: None                          
+                   metric: angular                       
                     model: gd                            	[default: faze]
                      name: gd                            	[default: gaze_estimation]
                   netGaze: regressor                     
                       ngf: 128                           	[default: 128]
+      num_image_per_point: 3                             	[default: 30]
+              num_threads: 16                            
                patch_size: [160, 80, 40, 20]             	[default: [56, 28, 14, 7]]
                patch_type: face                          	[default: faze]
-           pose_estimator: eos                           	[default: pnp]
+                    phase: train                         
+           pose_estimator: eos                           
+               preprocess: none                          
                      seed: None                          
+                     step: 1                             	[default: 100]
             upsample_size: 640                           	[default: None]
-            visualize_cal: True                          	[default: False]
-           write_features: False                         
+              visual_freq: 400                           
+            visualize_cal: 1                             	[default: 0]
+           write_features: 0                             
 ----------------- End -------------------

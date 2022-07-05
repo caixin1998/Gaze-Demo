@@ -167,9 +167,9 @@ class HeadPoseEstimator(object):
             eos_mesh, eos_pose, eos_shape_coeffs, eos_blendshape_coeffs
         ] = self.mesh_fit(frame, landmarks)
 
-        fx, fy, cx, cy = camera_parameters
+        intrinsics = camera_parameters
         # Initial fit
-        intrinsics = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
+        # intrinsics = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
         # Set scaling factor as necessary
         scaling_factor = 1.0
         if target_io_dist is not None:
@@ -267,10 +267,8 @@ class PnPHeadPoseEstimator(object):
             landmarks[i - 1, :]
             for i in self.ibug_ids_to_use
         ], dtype=np.float64)
-        fx, fy, cx, cy = camera_parameters
-
         # Initial fit
-        camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
+        camera_matrix = camera_parameters
         success, rvec, tvec, inliers = cv.solvePnPRansac(self.sfm_points_for_pnp, landmarks,
                                                           camera_matrix, None, flags=cv.SOLVEPNP_EPNP)
 
@@ -295,8 +293,7 @@ class PnPHeadPoseEstimator(object):
         return rvec, tvec, o_3d
 
     def project_model(self, rvec, tvec, camera_parameters):
-        fx, fy, cx, cy = camera_parameters
-        camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
+        camera_matrix = camera_parameters
         points, _ = cv.projectPoints(self.sfm_points_ibug_subset, rvec, tvec, camera_matrix, None)
         return points
 
@@ -369,10 +366,11 @@ class FaceEstimator(object):
             landmarks[i - 1, :]
             for i in self.ibug_ids_to_use
         ], dtype=np.float64)
-        fx, fy, cx, cy = camera_parameters
+        # fx, fy, cx, cy = camera_parameters
 
         # Initial fit
-        camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
+        # camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]], dtype=np.float64)
+        camera_matrix = camera_parameters
         success, rvec, tvec, inliers = cv.solvePnPRansac(self.sfm_points_for_pnp, landmarks,
                                                           camera_matrix, None, flags=cv.SOLVEPNP_EPNP)
 

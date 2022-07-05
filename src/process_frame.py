@@ -58,11 +58,9 @@ class frame_processor:
                 kalman_filters_landm_complex = self.kalman_filters_landm[i].update(pts[i, 0] + 1j * pts[i, 1])
                 pts[i, 0], pts[i, 1] = np.real(kalman_filters_landm_complex), np.imag(kalman_filters_landm_complex)
 
-            fx, _, cx, _, fy, cy, _, _, _ = self.cam_calib['mtx'].flatten()
-            camera_parameters = np.asarray([fx, fy, cx, cy])
-            # print(img.shape, pts, camera_parameters)
+            camera_parameters = self.cam_calib['mtx']
             rvec, tvec, o_3d = self.head_pose_estimator(img, pts, camera_parameters)
-            print("head_pose estimate time: ", time.time() - tic)
+            # print("head_pose estimate time: ", time.time() - tic)
             tic = time.time()
             head_pose = (rvec, tvec)
             entry = {}
@@ -89,7 +87,7 @@ class frame_processor:
             ycrcb = cv.cvtColor(patch_img, cv.COLOR_RGB2YCrCb) 
             ycrcb[:, :, 0] = cv.equalizeHist(ycrcb[:, :, 0])
             patch_img = cv.cvtColor(ycrcb, cv.COLOR_YCrCb2BGR)
-            print("preprocess_image time: ", time.time() - tic)
+            # print("preprocess_image time: ", time.time() - tic)
             tic = time.time()
             return True, normalized_entry, patch_img
         else:

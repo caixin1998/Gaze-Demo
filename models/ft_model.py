@@ -158,12 +158,13 @@ class FTModel(BaseModel):
     def load_init_networks(self):
         assert os.path.isfile(self.opt.ckpt_path)
         ckpt = torch.load(self.opt.ckpt_path)
+        print("> Loading:",self.opt.ckpt_path)
         weights = dict([(k[:], v) for k, v in ckpt['state_dict'].items()])
         self.netG.load_state_dict(weights)
         
     def load_networks(self):
         load_path = os.path.join(self.opt.cal_weight_path, '%s'%(self.opt.subject),self.opt.ckpt_path.split('/')[-1])
-        print(load_path)
+        
         if os.path.isfile(load_path):
             ted_weights = torch.load(load_path)
             self.netG.load_state_dict(ted_weights)

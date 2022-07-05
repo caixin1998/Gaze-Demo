@@ -28,18 +28,18 @@ keys = {'u': 82,
 global THREAD_RUNNING
 global frames, data ,last
 
-def add_kv(list_dict, key, value):
+def add_kv(list_dict, key, value, num_image_per_point = 1):
     if key in list_dict:
         if not isinstance(value,list):
             list_dict[key].append(value)
         else:
-            list_dict[key] += value[-10:]
+            list_dict[key] += value[-num_image_per_point:]
     else:
         list_dict[key] = list()
         if not isinstance(value,list):
             list_dict[key].append(value)
         else:
-            list_dict[key] += value[-10:]
+            list_dict[key] += value[-num_image_per_point:]
 
 def create_image(mon, direction, i, color, size = 0.5, thickness = 2, target='E', grid=True, total=9, use_last = False):
     global last
@@ -148,16 +148,18 @@ def check_len(frames, lens = 10):
 #                 print("For cam%d, the gaze_cam_origin is "%self.idx,\
 #                     normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
     
-def grab_img(processor, idx, cap):
+def grab_img(processor, idx, queue):
     global THREAD_RUNNING
     global frames, data, g_t
 
     while THREAD_RUNNING:
-        _, frame =cap.read()
+        frame_dict =  queue.get()
+        frame = frame_dict["frame"]
         frames[idx].append(frame)
         # print(idx, THREAD_RUNNING)
-        
+        tic = time.time()
         ret_face, normalized_entry, patch_img = processor(copy.deepcopy(frame), g_t)
+        print(time.time() - tic)
         if ret_face:
             for key, value in normalized_entry.items():
                 add_kv(data[idx], key, value)
@@ -180,14 +182,16 @@ def grab_img(processor, idx, cap):
 #                 normalized_entry["gaze_cam_origin"],flush=True)
 
 
-def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False):
+def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False):
     global THREAD_RUNNING
     global frames, data, g_t
+    num_image_per_point = opt.num_image_per_point
+
     results = []
     data = dict()
     frames = dict()
     # mutex = threading.Lock()
-    num_cap = len(caps)
+    num_cap = len(queues)
     calib_data = {'g_t': []}
     ths = []
     processors = []
@@ -209,7 +213,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
         while i < point_num:
             ths = []
             for j in range(num_cap):
-                th =  threading.Thread(target=grab_img, args=(processors[i], j, caps[j]))
+                th =  threading.Thread(target=grab_img, args=(processors[j], j, queues[j]))
                 ths.append(th)
             # Start the sub-thread, which is responsible for grabbing images
             THREAD_RUNNING = True
@@ -223,6 +227,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
             key_press = cv.waitKey(2000)
             if key_press & 0xFF == ord('q'):
                 cv.destroyAllWindows()
+        
                 THREAD_RUNNING = False
                 for j in range(num_cap):
                     ths[j].join()
@@ -262,15 +267,16 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 for j in range(num_cap):
                     ths[j].join()
             for j in range(num_cap):
+
                 for key, value in data[j].items():
-                    add_kv(results[j], key, value)
+                    add_kv(results[j], key, value, num_image_per_point)
 
 
 
     cv.destroyAllWindows()
     img_paths = []
     for j in range(num_cap):
-        img_path = 'calibration/%s_calib/cam%d'%(subject, j)
+        img_path = 'calibration/%s/%s/cam%d'% (opt.id, subject, j)
         os.makedirs(img_path, exist_ok=True)
         img_paths.append(img_path)
     target = []
@@ -278,7 +284,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
         n = 0 
         for index, frames_ in enumerate(calib_data['frame%ds'%j]):
             print(index, len(frames_))
-            for k in range(len(frames_) - 10, len(frames_)):
+            for k in range(len(frames_) - num_image_per_point, len(frames_)):
                 frame = frames_[k]
                 g_t = calib_data['g_t'][index]
                 target.append(g_t)
@@ -287,7 +293,7 @@ def collect_data(subject, caps, mon, opt, cam_calibs, calib_points=9, rand_point
                 n += 1
 
     # print(target)
-    fout = open('calibration/%s_calib_target.pkl' % subject, 'wb')
+    fout = open('calibration/%s/%s/calib_target.pkl' % (opt.id, subject), 'wb')
     pickle.dump(target, fout)
     fout.close()
     return results[0]
@@ -298,9 +304,9 @@ def fine_tune(opt, data, core, gaze_network, steps=1000):
     # collect person calibration data
     gaze_network.load_init_networks()
     subject = opt.subject
-
     if data is None:
         data = core.process_for_finetune(subject)
+    print(data)
     
     input_dict_train, input_dict_valid = gaze_network.init_input(data)
     #############
@@ -309,20 +315,19 @@ def fine_tune(opt, data, core, gaze_network, steps=1000):
  
     gaze_network.eval()
     valid_loss = gaze_network.test(input_dict_valid).cpu()
-    print('%04d> , Validation: %.2f' % (0, valid_loss.item()))
+    # print('%04d> , Validation: %.2f' % (0, valid_loss.item()))
 
     for i in range(steps):
         # zero the parameter gradient
         gaze_network.train()
-
         # forward + backward + optimize
         gaze_network.optimize_parameters(input_dict_train)
-        if i % 100 == 99:
+        if i % 100 == 0:
             train_loss = gaze_network.test(input_dict_train).cpu()
             gaze_network.eval()
             valid_loss = gaze_network.test(input_dict_valid).cpu()
             print('%04d> Train: %.2f, Validation: %.2f' %
-                  (i+1, train_loss.item(), valid_loss.item()))
+                  (i, train_loss.item(), valid_loss.item()))
     gaze_network.save_networks(subject)
     torch.cuda.empty_cache()
 

@@ -38,19 +38,11 @@ def image_put(cam_idx, camera_size, q):
         while cap.isOpened():
             # print('cap.read()[0]:', cap.read()[0])
             ret, frame = cap.read()
+
             # print('ret:', ret)
             if ret:
                 q.put({"frame":frame, "time": time.time()})
-                # print("cam_idx:", cam_idx, q.qsize())
-
-                if q.qsize() > 1:
-                    # print("!!!!!!!!!")
-                    pass
-                else:
-                    time.sleep(0.01)
-
                 # q.get() if q.qsize() > 1 else time.sleep(0.01)
-                # print("cam_idx:", cam_idx, q.size())
 
 def depth_put(queues, depth_shape = (1280,720)):
         pipeline = rs.pipeline()
@@ -100,46 +92,10 @@ def depth_put(queues, depth_shape = (1280,720)):
             queues[0].put(color_image)
             # queues[2].put(depth_colormap)
             queues[2].put(time.time())
-            # print("color_image:", queues[0].qsize())
-            
-            for q in queues:
-                q.get() if q.qsize() > 1 else time.sleep(0.01)
 
-def draw_tips(img_path):
-    # text = "请调整您的座椅至（x=%d, y=%d, z=%d）处"
-    font = cv.FONT_HERSHEY_SIMPLEX
-    img = cv.imread(img_path)
-    img = cv.resize(img, (1920, 1080))
-    # img = np.ones((1080, 1920, 3), np.float32)
-    # img[...,0] = 207. / 255.
-    # img[...,1] = 237. / 255.
-    # img[...,2] = 199. / 255.
-    # cv.putText(img, text, (300,500), font, 80, (0,  0, 255), 4, cv.LINE_AA)
-    # cv.
-    cv.namedWindow("image1", cv.WINDOW_AUTOSIZE)
-    cv.setWindowProperty("image1", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-    cv.imshow('image1', img)
-    if cv.waitKey(0):
-        cv.destroyAllWindows()
+            # for q in queues:
+            #     q.get() if q.qsize() > 1 else time.sleep(0.01)
 
-def show(queues):
-    cv.namedWindow('RealSense', cv.WINDOW_AUTOSIZE)
-    cv.setWindowProperty("RealSense", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
-    
-    while True:
-        frames = []
-        for queue in queues[:-1]:
-            frames.append(cv.resize(queue.get()["frame"],(960,540)))
-        frames.append(cv.resize(queues[-1].get(),(960,540)))
-        
-        images = np.vstack((np.hstack((frames[0],frames[1])), np.hstack((frames[2],frames[3]))))
-        
-        cv.imshow('RealSense', images)
-
-        key = cv.waitKey(1)
-    # cv2.imwrite(os.path.join("frames","%05d.png"%i), frame)
-        if key&0xFF==ord('q'):
-            break
 
 if __name__ == '__main__':
     opt = FinetuneOptions().parse() 
@@ -167,12 +123,12 @@ if __name__ == '__main__':
         cap.release()
 
     mp.set_start_method(method='spawn')
-    queues = [mp.Queue(maxsize=2) for _ in opt.cam_idx]
+    queues = [mp.Queue(maxsize=200) for _ in opt.cam_idx]
     processes = []
     for queue, cam_id in zip(queues, opt.cam_idx):
         processes.append(mp.Process(target=image_put, args=(cam_id, opt.camera_size, queue)))
     if opt.depth:
-        queues += [mp.Queue(maxsize=2) for _ in range(3)]
+        queues += [mp.Queue(maxsize=200) for _ in range(3)]
         processes.append(mp.Process(target=depth_put, args=(queues[-3:],)))
     for process in processes:
         process.daemon = True
@@ -180,34 +136,24 @@ if __name__ == '__main__':
     # collect person calibration data and fine-
     # tune gaze network
     subject = input('Enter subject name: ')
-    img_list = [os.path.join("tips", img) for img in os.listdir("tips")]
-    img_list.sort()
-    # print(img_list)
+
     subject += "+%d"%opt.k
     opt.subject = subject
-    i = 0
-    for z in range(3):
-        # for y in range(2):
-        for (x,y) in [(0,0),(1,0),(2,0),(2,1),(1,1),(0,1)]:
-            draw_tips(img_list[i])
-            show(queues[:-2])
-            subject_i = '%s_%d'%(subject, i)
-            os.makedirs('calibration/%s/%s'%(opt.id, subject_i), exist_ok= True)
-        # position = input('Enter your position (x y z) :')
-            position = "%d %d %d"%(x,y,z)
-            with open('calibration/%s/%s/position.txt' %(opt.id, subject_i), 'w') as f:
-                f.write(position) 
+    os.makedirs('calibration/%s/%s'%(opt.id, subject), exist_ok= True)
+    position = input('Enter your position (x y z) :')
+    with open('calibration/%s/%s/position.txt' %(opt.id, subject), 'w') as f:
+        f.write(position) 
 
 
-            # calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
-            # data = None
-            # model = create_model(opt)
-            mon = monitor("/home/caixin/tnm-opencv/data/%s/cam%s/opt.txt"%(opt.id, opt.cam_idx[0]))
-            # core = process_core(opt, cam_calibs)
-            # if opt.do_collect:
-            
-            collect_data(subject_i, queues, mon, opt, cam_calibs, calib_points=opt.k, rand_points=16, view_collect = False)
-            i += 1
+    # calib_list  = [cal_sample.split('_')[0] for cal_sample in os.listdir("calibration") ]
+    data = None
+    model = create_model(opt)
+    mon = monitor("/home/caixin/tnm-opencv/data/%s/cam%s/opt.txt"%(opt.id, opt.cam_idx[0]))
+    core = process_core(opt, cam_calibs)
+
+    # if opt.do_collect:
+    data = collect_data(subject, queues, mon, opt, cam_calibs, calib_points=opt.k, rand_points=16, view_collect = False)
+
     # if opt.do_finetune or opt.do_collect:
     #     model = fine_tune(opt, data, core, model, steps = opt.step)
     # else:

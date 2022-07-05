@@ -45,9 +45,9 @@ def common_pre(entry, patch_type):
     full_frame = cv2.cvtColor(entry['full_frame'], cv2.COLOR_BGR2RGB)
 
     # Form camera matrix
-    fx, fy, cx, cy = entry['camera_parameters']
-    camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]],
-                             dtype=np.float64)
+    camera_matrix = entry['camera_parameters']
+    # camera_matrix = np.array([[fx, 0, cx], [0, fy, cy], [0, 0, 1]],
+    #                          dtype=np.float64)
 
     # Get camera parameters
     if patch_type == "face":
@@ -55,6 +55,12 @@ def common_pre(entry, patch_type):
         'focal_length': 960,
         'distance': 600,
         'size': (224, 224),
+    }
+    elif patch_type == "face1":
+        normalized_parameters = {
+        'focal_length': 960,
+        'distance': 600,
+        'size': (224, 128),
     }
     elif patch_type == "faze":
         normalized_parameters = {
@@ -70,7 +76,7 @@ def common_pre(entry, patch_type):
                                   dtype=np.float64)
 
     # Compute gaze-origin (g_o)
-    if patch_type == "face":
+    if patch_type[:4] == "face":
         g_o = entry["o_3d"]["face"]
     elif patch_type == "faze":
         g_o = entry["o_3d"]["eyes"]

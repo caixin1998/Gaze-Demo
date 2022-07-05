@@ -242,22 +242,22 @@ class GrabImg(threading.Thread):
                 if j == 1:
                     frame["frame"] = cv.flip(frame["frame"], -1)
                 
-                rs_data["frame%ds"%j].append(frame["frame"])
-                rs_data["time%ds"%j].append(frame["time"])
-                # if j == 0:
-                #     ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
-                #     if ret_face:
-                #         for key, value in normalized_entry.items():
-                #             add_kv(data[j], key, value, 1)
-                #         print("For cam%d, the gaze_cam_origin is "%0,\
-                # normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
-            rs_data["depth"].append(self.queues[-3].get())
-            rs_data["color"].append(self.queues[-2].get())
-            # rs_data["depth_colormap"].append(self.queues[-2].get())
-            rs_data["time"].append(self.queues[-1].get())
+            #     rs_data["frame%ds"%j].append(frame["frame"])
+            #     rs_data["time%ds"%j].append(frame["time"])
+                if j == 0:
+                    ret_face, normalized_entry, patch_img = self.processors[j](copy.deepcopy(frame), g_t)
+                    if ret_face:
+                        for key, value in normalized_entry.items():
+                            add_kv(data[j], key, value, 1)
+            #     #         print("For cam%d, the gaze_cam_origin is "%0,\
+            #     # normalized_entry["gaze_cam_origin"].reshape(3),end = "\n",flush=True)
+            # rs_data["depth"].append(self.queues[-3].get())
+            # rs_data["color"].append(self.queues[-2].get())
+            # # rs_data["depth_colormap"].append(self.queues[-2].get())
+            # rs_data["time"].append(self.queues[-1].get())
 
-            for key in rs_data.keys():
-                rs_data[key] = rs_data[key][-self.num_image_per_point:]
+            # for key in rs_data.keys():
+            #     rs_data[key] = rs_data[key][-self.num_image_per_point:]
         # print(rs_data)
         
 
@@ -307,22 +307,21 @@ def save_data_process(save_data, idx, img_paths, num_cap, num_image_per_point):
         for k in range(len(frames_) - num_image_per_point, len(frames_)):
             frame = frames_[k]
             cv.imwrite(os.path.join(img_paths[j],"%05d.png"%n), frame)
-        
             n += 1
 
-    for key in ["depth", "color"]:
-        n = idx * num_image_per_point 
-        save_path = os.path.join(img_paths[j][:-5], key)
-        frames_ = save_data[key]
-        os.makedirs(save_path,exist_ok= True)
-        for k in range(len(frames_) - num_image_per_point, len(frames_)):
-            # print(index, len(frames_))
-            frame = frames_[k]
-            if key == "depth":
-                np.save(os.path.join(save_path,"%05d.npy"%n), frame)
-            else:
-                cv.imwrite(os.path.join(save_path,"%05d.png"%n), frame)
-            n += 1
+    # for key in ["depth", "color"]:
+    #     n = idx * num_image_per_point 
+    #     save_path = os.path.join(img_paths[j][:-5], key)
+    #     frames_ = save_data[key]
+    #     os.makedirs(save_path,exist_ok= True)
+    #     for k in range(len(frames_) - num_image_per_point, len(frames_)):
+    #         # print(index, len(frames_))
+    #         frame = frames_[k]
+    #         if key == "depth":
+    #             np.save(os.path.join(save_path,"%05d.npy"%n), frame)
+    #         else:
+    #             cv.imwrite(os.path.join(save_path,"%05d.png"%n), frame)
+    #         n += 1
 
 def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_points=5, view_collect = False):
     global THREAD_RUNNING

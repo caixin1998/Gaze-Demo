@@ -192,15 +192,19 @@ def write_video_process(cap_id, collect, queue, video_path):
     #     }) 
     import ffmpeg
     save_path = os.path.join(video_path, "cam%d.mp4"%cap_id)
+    print("cap_id:", cap_id)
+
     writer = (
         ffmpeg
         .input('pipe:', v=0, hide_banner=None, nostats=None, vsync="passthrough", r=30, format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(1920, 1080))
-        .output(save_path, vcodec='h264_nvenc', preset='hq', profile='main', crf=0, video_bitrate='10M')
+        .output(save_path, vcodec='h264_nvenc', preset='p6', profile='main', crf=0)#, video_bitrate='10M')
         # .output(save_path, vcodec='libx264')
 
         .overwrite_output()
         .run_async(pipe_stdin=True)
     )
+
+    print("cap_id:", cap_id)
     timestamps = list() 
     while collect.value:
         frame_dict =  queue.get()
@@ -215,51 +219,89 @@ def write_video_process(cap_id, collect, queue, video_path):
     timestamps = np.array(timestamps)
     np.savetxt(os.path.join(video_path, "time%d.txt"%cap_id), timestamps, fmt = "%.3f")
     # writer.close()
+    
     writer.stdin.close()
     writer.wait()
+
+
+def write_videos_process(cap_ids, collect, queues, video_path):
+    import ffmpeg
+    writers = []
+    timestamps = []
+    for cap_id in cap_ids:
+        save_path = os.path.join(video_path, "cam%d.mp4"%cap_id)
+        print("cap_id:", cap_id)
+        writers += [(
+            ffmpeg
+            .input('pipe:', v=0, hide_banner=None, nostats=None, vsync="passthrough", r=30, format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(1920, 1080))
+           .output(save_path, vcodec='h264_nvenc', preset='hq', profile='main', crf=0, video_bitrate='9M')
+            # .output(save_path, vcodec='libx264')
+
+            .overwrite_output()
+            .run_async(pipe_stdin=True)
+        )]
+        print("cap_id:", cap_id)
+        timestamps += [list()] 
+    while collect.value:
+        for i, queue in enumerate(queues):
+            frame_dict =  queue.get()
+        # print(queue.qsize())
+            frame = frame_dict["frame"]
+            if i == 1:
+                frame = cv.flip(frame, -1)
+        # frame = frame[...,::-1]
+        # writer.writeFrame(frame)
+            writers[i].stdin.write(frame.tobytes())
+            timestamps[i] += [frame_dict["time"]]
+
+    for i, timestamp in enumerate(timestamps):
+        timestamp = np.array(timestamp)
+        np.savetxt(os.path.join(video_path, "time%d.txt"%cap_id), timestamp, fmt = "%.3f")
+        writers[i].stdin.close()
+        writers[i].wait()
 
 def write_color_process(queue, collect, color_path):
-    import ffmpeg
     save_path = os.path.join(color_path, "color.mp4")
-    writer = (
-        ffmpeg
-        .input('pipe:', v=0, hide_banner=None, nostats=None, vsync="passthrough", r=30, format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(1280, 720))
-        .output(save_path, vcodec='h264_nvenc', preset='hq', profile='main', video_bitrate='10M')
-        .overwrite_output()
-        .run_async(pipe_stdin=True)
-    )
-    while collect.value:
-        frame =  queue.get()
-        print('color:', queue.qsize())
-
-        writer.stdin.write(frame.tobytes())
-
-    # writer.close()
-    writer.stdin.close()
-    writer.wait()
-
-def write_depth_process(queues, collect, depth_path):
-    os.makedirs(os.path.join(depth_path, 'depth'), exist_ok=True)
-    # writer = skvideo.io.FFmpegWriter(os.path.join(depth_path, "color.mp4"), outputdict={
+    writer = cv.VideoWriter(save_path, cv.VideoWriter_fourcc('M','P','4','V'), 30, (1280,720), True)
+    # writer = skvideo.io.FFmpegWriter(save_path, outputdict={
     #     '-r': "30",
     #     '-vcodec': 'libx264',  #use the h.264 codec
     #     '-crf': '0',           #set the constant rate factor to 0, which is lossless
-    #     '-preset':'fast',   #the slower the better compression, in princple, try 
+    #     '-preset':'fast'   #the slower the better compression, in princple, try 
     #                      #other options see https://trac.ffmpeg.org/wiki/Encode/H.264
     #     }) 
-    import ffmpeg
+    while collect.value:
+        frame =  queue.get()
+        # print('color:', queue.qsize())
+        writer.write(frame)
+    writer.release()
+  
 
+def write_depth_process(queues, collect, depth_path):
+    os.makedirs(os.path.join(depth_path, 'depth'), exist_ok=True)
+    import ffmpeg
+    # save_path = os.path.join(depth_path, "color.mp4")
+    # writer = (
+    #     ffmpeg
+    #     .input('pipe:', v=0, hide_banner=None, nostats=None, vsync="passthrough", r=30, format='rawvideo', pix_fmt='bgr24', s='{}x{}'.format(1280, 720))
+    #     .output(save_path, vcodec='h264_nvenc', preset='hq', profile='main', video_bitrate='10M')
+    #     .overwrite_output()
+    #     .run_async(pipe_stdin=True)
+    # )
     timestamps = list() 
     i = 0
     while collect.value:
+        # frame =  queues[-3].get()
+        # writer.stdin.write(frame.tobytes())
+
         depth = queues[-2].get()
         with h5py.File(os.path.join(depth_path,"depth","%05d.h5"%i), "w") as f:
             f.create_dataset("depth", data = depth, compression = 'lzf')
-        # np.savez_compressed(os.path.join(depth_path,"depth","%05d"%i), depth.astype(np.short))
-        # np.save(os.path.join(depth_path,"depth","%05d.npy"%i), depth.astype(np.short))
         i += 1
-        print('depth:', queues[-2].qsize())
+        # print('depth:', queues[-2].qsize())
         timestamps += [queues[-1].get()]
+    # writer.stdin.close()
+    # writer.wait()
     timestamps = np.array(timestamps)
     np.savetxt(os.path.join(depth_path, "time_realsense.txt"), timestamps, fmt = "%.3f")
 
@@ -268,7 +310,6 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
     global THREAD_RUNNING
     global  data, g_t ,idx
     num_image_per_point = opt.num_image_per_point
-    results = []
     data = {}
     num_cap = len(opt.cam_idx)
     collect =  mp.Value("i", 1)
@@ -280,6 +321,7 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
     for j in range(num_cap):
         processes.append(mp.Process(target = write_video_process, args = (j,collect,queues[j],img_path,)))
     processes.append(mp.Process(target = write_depth_process, args = (queues[-2:], collect, img_path,)))
+    # processes.append(mp.Process(target = write_videos_process, args = (list(range(num_cap)),collect,queues[:num_cap],img_path,)))
     processes.append(mp.Process(target = write_color_process, args = (queues[-3], collect, img_path,)))
 
     time_data = {}
@@ -288,14 +330,15 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
 
         # th = GrabImg(opt, cam_calibs[j], j, caps[j], mutex)
         # ths.append(th)
-    cv.namedWindow("image", cv.WINDOW_NORMAL)
-    cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+    # cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     idx = 0
 
     for process in processes:
         process.daemon = True
         process.start()
-
+    mark = 0
+    cv.namedWindow("image", cv.WINDOW_AUTOSIZE)
+    cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     for stage, point_num in enumerate([calib_points, rand_points]):
         i = 0
         
@@ -307,9 +350,13 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
             for j in range(num_cap):
                 data[j] = {}
             cv.imshow('image', img)
-            key_press = cv.waitKey(2000)
+            if stage == 0:
+                key_press = cv.waitKey(1500)
+            else:
+                key_press = cv.waitKey(1900)
+
             if key_press & 0xFF == ord('q'):
-                cv.destroyAllWindows()
+                mark = 1
                 cv.destroyAllWindows()
                 break
             elif key_press > 0 :
@@ -325,15 +372,17 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
                 cv.imshow('image', img)
                 cv.waitKey(50)
 
-                time.sleep(0.5)
+                time.sleep(0.3)
                 i += 1
                 idx += 1
             elif key_press & 0xFF == ord('q'):
+                mark = 1
                 cv.destroyAllWindows()
                 break
             # for j in range(num_cap):
-            for key, value in data[0].items():
-                add_kv(results[0], key, value, num_image_per_point)
+        
+        if mark:
+            break
     collect.value = 0
     cv.destroyAllWindows()
 
@@ -346,7 +395,6 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
     np.savetxt('calibration/%s/%s/calib_target.txt' %(opt.id, subject), target) 
     np.savetxt('calibration/%s/%s/times.txt' %(opt.id, subject), times, fmt="%.3f")
 
-    return results[0]
 
 
 def fine_tune(opt, data, core, gaze_network, steps=1000):

@@ -36,29 +36,29 @@ class BaseOptions():
         parser.add_argument('--ngf', type=int, default='128', help='network filters in the last conv layer')
 
         #for demo
-        parser.add_argument('--cal', dest='cal', default=False, action='store_true')
-        parser.add_argument('--do_collect',  type=bool, default=False)
-        parser.add_argument('--do_finetune', type=bool, default=False)
+        parser.add_argument('--cal', dest='cal', default=0, action='store_true')
+        parser.add_argument('--do_collect',  type=int, default=0)
+        parser.add_argument('--do_finetune', type=int, default=0)
 
         parser.add_argument('--cal_weights_path', type = str, default = 'weights/calibration')
         parser.add_argument('--k', type=int, default=9, help='point number for calibration (maml)')
 
-        parser.add_argument('--cam_idx', type=int, default=[3, 4], nargs = '+',help='cam_idx')
+        parser.add_argument('--cam_idx', type=int, default=[3, 4, 5], nargs = '+',help='cam_idx')
         parser.add_argument('--id', type=str, default="0",help='extrinsic parameters id.')
         parser.add_argument('--pose_estimator', type=str, default='eos', help='pnp or eos')
         parser.add_argument('--patch_type', type=str, default='faze', help='faze, face or eyes')
 
         parser.add_argument('--cal_weight_path',  type=str, default='weights/calibration')
-        parser.add_argument('--display_patch', type=bool, default=True, help='display the face')
-        parser.add_argument('--visualize_cal', type=bool, default=False, help='display the face')
+        parser.add_argument('--display_patch', type=int, default=1, help='display the face')
+        parser.add_argument('--visualize_cal', type=int, default=0, help='display the face')
 
 
-        parser.add_argument('--cam', type=bool, default=False, help='display the face')
-        parser.add_argument('--write_features', type=bool, default=False, help='display the face')
+        parser.add_argument('--cam', type=int, default=0, help='display the face')
+        parser.add_argument('--write_features', type=int, default=0, help='display the face')
 
         parser.add_argument('--num_image_per_point', type=int, default=30, help='display the face')
 
-        parser.add_argument('--depth', type=bool, default=True, help='whether use realsense')
+        parser.add_argument('--depth', type=int, default=True, help='whether use realsense')
 
 
         parser.add_argument('--camera_size', type=int, nargs = '+', default=[1920, 1080], help='display the face')

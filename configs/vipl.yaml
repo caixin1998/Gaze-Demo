@@ -1,13 +1,13 @@
-model: gd
+model: ft
 # do_collect: False
-name: gd
+name: ft
 backbone: hratp64
 camera_size: [1920, 1080]
-visualize_cal: 1
+# visualize_cal: True
 pose_estimator: eos
 patch_type: 'face'
 half: 1
-ckpt_path: weights/hratp_640_half_vipl_all.ckpt
+ckpt_path: weights/hratp_640_half_vipl.ckpt
 upsample_size: 640
 patch_size: [160, 80, 40, 20]
 atp_merge: transformer
@@ -16,8 +16,6 @@ atp_merge: transformer
 depth: 0
 cam_idx: 0
 id: 5
-step: 1
-num_image_per_point: 10
 # batch_size: 6
 # lr: 0.00001
 # k: 9

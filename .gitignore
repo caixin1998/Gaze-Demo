@@ -140,3 +140,4 @@ src/ext
 *.out
 *.pth
 calibration
+*.PNG

@@ -97,6 +97,7 @@ class GDModel(BaseModel):
         for k, v in input.items():
             if isinstance(v, np.ndarray):
                 input[k] = torch.FloatTensor(v).to(self.device).detach()
+                # print(k, input[k].shape)
             # print(input[k].device)
         return input
 
@@ -131,8 +132,9 @@ class GDModel(BaseModel):
         with torch.no_grad():
             self(input)
         shift =  input["gaze"] - self.output["pred"]
+        print("shift:", shift)
         self.shift = torch.mean(shift, dim = 0)[None,...]
-        print(self.shift)
+        print("self.shift:", self.shift)
     def test(self, input):
         with torch.no_grad():
             self(input)

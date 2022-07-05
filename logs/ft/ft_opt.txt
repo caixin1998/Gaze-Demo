@@ -1,31 +1,31 @@
 ----------------- Options ---------------
                 atp_merge: transformer                   	[default: add]
                  backbone: hratp64                       	[default: resnet50]
-               batch_size: 6                             	[default: 64]
+               batch_size: 64                            
                     beta1: 0.5                           
-                      cal: False                         
+                      cal: 0                             
           cal_weight_path: weights/calibration           
          cal_weights_path: weights/calibration           
-                      cam: False                         
-                  cam_idx: [6]                           	[default: [6, 8]]
+                      cam: 0                             
+                  cam_idx: [0]                           	[default: [3, 4]]
               camera_size: [1920, 1080]                  
           checkpoints_dir: ./logs                        
-                ckpt_path: weights/concat_hratp_640_half.ckpt	[default: weights/eve_face.ckpt]
-                   config: configs/ft.yaml               	[default: None]
+                ckpt_path: weights/hratp_640_half_vipl_all.ckpt	[default: weights/eve_face.ckpt]
+                   config: configs/gd.yaml               	[default: None]
                 criterion: smoothl1                      
                  dataroot: /home/caixin/GazeData/xgaze_224
                   dataset: xgaze                         
              dataset_mode: aligned                       
-                    depth: True                          
-            display_patch: True                          
-               do_collect: False                         
-              do_finetune: False                         
+                    depth: 0                             	[default: True]
+            display_patch: 1                             
+               do_collect: 1                             	[default: 0]
+              do_finetune: 0                             
                      flip: False                         
                      half: 1                             	[default: 0]
                 hr_stride: [2, 2]                        
-                       id: 3                             	[default: 0]
+                       id: 5                             	[default: 0]
                         k: 9                             
-                       lr: 1e-05                         	[default: 0.0001]
+                       lr: 0.0001                        
          max_dataset_size: None                          
                    metric: angular                       
                     model: ft                            	[default: faze]
@@ -43,6 +43,6 @@
                      step: 100                           
             upsample_size: 640                           	[default: None]
               visual_freq: 400                           
-            visualize_cal: True                          	[default: False]
-           write_features: False                         
+            visualize_cal: 1                             	[default: 0]
+           write_features: 0                             
 ----------------- End -------------------
