@@ -154,8 +154,8 @@ class GrabImg(threading.Thread):
 
             for j in range(len(self.processors)):
                 frame =  self.queues[j].get()
-                if j == 1:
-                    frame["frame"] = cv.flip(frame["frame"], -1)
+                # if j == 1:
+                #     frame["frame"] = cv.flip(frame["frame"], -1)
                 
                 rs_data["frame%ds"%j].append(frame["frame"])
                 rs_data["time%ds"%j].append(frame["time"])
@@ -210,8 +210,8 @@ def write_video_process(cap_id, collect, queue, video_path):
         frame_dict =  queue.get()
         # print(queue.qsize())
         frame = frame_dict["frame"]
-        if cap_id == 1:
-            frame = cv.flip(frame, -1)
+        # if cap_id == 1:
+        #     frame = cv.flip(frame, -1)
         # frame = frame[...,::-1]
         # writer.writeFrame(frame)
         writer.stdin.write(frame.tobytes())
@@ -247,8 +247,8 @@ def write_videos_process(cap_ids, collect, queues, video_path):
             frame_dict =  queue.get()
         # print(queue.qsize())
             frame = frame_dict["frame"]
-            if i == 1:
-                frame = cv.flip(frame, -1)
+            # if i == 1:
+            #     frame = cv.flip(frame, -1)
         # frame = frame[...,::-1]
         # writer.writeFrame(frame)
             writers[i].stdin.write(frame.tobytes())
@@ -262,7 +262,7 @@ def write_videos_process(cap_ids, collect, queues, video_path):
 
 def write_color_process(queue, collect, color_path):
     save_path = os.path.join(color_path, "color.mp4")
-    writer = cv.VideoWriter(save_path, cv.VideoWriter_fourcc('M','P','4','V'), 30, (1280,720), True)
+    writer = cv.VideoWriter(save_path, cv.VideoWriter_fourcc('m','p','4','v'), 30, (1280,720), True)
     # writer = skvideo.io.FFmpegWriter(save_path, outputdict={
     #     '-r': "30",
     #     '-vcodec': 'libx264',  #use the h.264 codec
@@ -275,7 +275,8 @@ def write_color_process(queue, collect, color_path):
         # print('color:', queue.qsize())
         writer.write(frame)
     writer.release()
-  
+
+
 
 def write_depth_process(queues, collect, depth_path):
     os.makedirs(os.path.join(depth_path, 'depth'), exist_ok=True)

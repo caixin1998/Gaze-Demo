@@ -38,6 +38,8 @@ def image_put(cam_idx, camera_size, q):
         while cap.isOpened():
             # print('cap.read()[0]:', cap.read()[0])
             ret, frame = cap.read()
+            if cam_idx == 4:
+                frame = cv.flip(frame, -1)
             # print('ret:', ret)
             if ret:
                 q.put({"frame":frame, "time": time.time()})
@@ -81,6 +83,7 @@ def depth_put(queues, depth_shape = (1280,720)):
         clipping_distance = clipping_distance_in_meters / depth_scale
 
         while True:
+            tic = time.time()
             rs_frames = pipeline.wait_for_frames()
             rs_frames = align.process(rs_frames)
             depth_frame = rs_frames.get_depth_frame()
@@ -102,9 +105,13 @@ def depth_put(queues, depth_shape = (1280,720)):
             queues[2].put(time.time())
             # print("color_image:", queues[0].qsize())
             
-            for q in queues:
-                q.get() if q.qsize() > 1 else time.sleep(0.01)
-
+            for i, q in enumerate(queues):
+                if q.qsize() > 1:
+                    # print("!!!!!!!!!", i)
+                    pass
+                else:
+                    time.sleep(0.01)
+            # print(time.time() - tic)
 def draw_tips(img_path):
     # text = "请调整您的座椅至（x=%d, y=%d, z=%d）处"
     font = cv.FONT_HERSHEY_SIMPLEX
@@ -128,10 +135,11 @@ def show(queues):
     
     while True:
         frames = []
-        for queue in queues[:-1]:
+        for queue in queues[:-3]:
             frames.append(cv.resize(queue.get()["frame"],(960,540)))
-        frames.append(cv.resize(queues[-1].get(),(960,540)))
-        
+        frames.append(cv.resize(queues[-3].get(),(960,540)))
+        queues[-2].get()
+        queues[-1].get()
         images = np.vstack((np.hstack((frames[0],frames[1])), np.hstack((frames[2],frames[3]))))
         
         cv.imshow('RealSense', images)
@@ -190,7 +198,7 @@ if __name__ == '__main__':
         # for y in range(2):
         for (x,y) in [(0,0),(1,0),(2,0),(2,1),(1,1),(0,1)]:
             draw_tips(img_list[i])
-            show(queues[:-2])
+            show(queues)
             subject_i = '%s_%d'%(subject, i)
             os.makedirs('calibration/%s/%s'%(opt.id, subject_i), exist_ok= True)
         # position = input('Enter your position (x y z) :')

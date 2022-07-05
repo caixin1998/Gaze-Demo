@@ -6,8 +6,8 @@ import cv2
 import os 
 os.makedirs("frames", exist_ok = True)
 #cap = cv2.VideoCapture(0, cv2.CAP_V4L2)
-cap = cv2.VideoCapture(2)
-# cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
+cap = cv2.VideoCapture(5)
+cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'))
 #cap = cv2.VideoCapture(0) #参数为0时调用本地摄像头；url连接调取网络摄像头；文件地址获取本地视频
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
