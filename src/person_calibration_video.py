@@ -338,7 +338,7 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
         process.daemon = True
         process.start()
     mark = 0
-    cv.namedWindow("image", cv.WINDOW_AUTOSIZE)
+    cv.namedWindow("image", cv.WINDOW_NORMAL)
     cv.setWindowProperty("image", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     for stage, point_num in enumerate([calib_points, rand_points]):
         i = 0

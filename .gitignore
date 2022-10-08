@@ -141,3 +141,4 @@ src/ext
 *.pth
 calibration
 *.PNG
+*.txt

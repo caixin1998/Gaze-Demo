@@ -123,14 +123,14 @@ def draw_tips(img_path):
     # img[...,2] = 199. / 255.
     # cv.putText(img, text, (300,500), font, 80, (0,  0, 255), 4, cv.LINE_AA)
     # cv.
-    cv.namedWindow("image1", cv.WINDOW_AUTOSIZE)
+    cv.namedWindow("image1", cv.WINDOW_NORMAL)
     cv.setWindowProperty("image1", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     cv.imshow('image1', img)
     if cv.waitKey(0):
         cv.destroyAllWindows()
 
 def show(queues):
-    cv.namedWindow('RealSense', cv.WINDOW_AUTOSIZE)
+    cv.namedWindow('RealSense', cv.WINDOW_NORMAL)
     cv.setWindowProperty("RealSense", cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
     
     while True:
