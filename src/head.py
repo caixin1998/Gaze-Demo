@@ -147,13 +147,13 @@ class HeadPoseEstimator(object):
         #       43   =>  614  # left eye inner-corner (8)
         #       46   =>  610  # left eye outer-corner (2)
         #       31   =>  114  # nose-tip (3)
-        #       35   =>  2797  # nose-lip junction
+        #       34   =>  270  # nose-lip junction
 
         o_3d = {}
         o_3d["reyes"] = np.mean([mesh_vertices[177], mesh_vertices[181]], axis=0)
         o_3d["leyes"] = np.mean([mesh_vertices[614], mesh_vertices[610]], axis=0)
         o_3d_eye_center = np.mean([o_3d["leyes"], o_3d["reyes"]], axis=0)
-        o_3d_nose = np.mean([mesh_vertices[114], mesh_vertices[2797]], axis=0)
+        o_3d_nose = np.mean([mesh_vertices[114], mesh_vertices[270]], axis=0)
         o_3d["face"] = np.mean([o_3d_eye_center, o_3d_nose], axis=0)
         o_3d["eyes"] = np.mean([mesh_vertices[181], mesh_vertices[614]], axis=0)
 
