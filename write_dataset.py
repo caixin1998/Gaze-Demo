@@ -10,7 +10,7 @@ import pickle
 import h5py
 import copy
 from undistorter import Undistorter
-from landmarks import landmarks
+from landmarks_media import landmarks
 from head import HeadPoseEstimator
 data_path = "/home1/caixin/GazeData/VIPLGaze538/supps"
 dataset_path = "/home1/caixin/GazeData/VIPLGaze538/images"

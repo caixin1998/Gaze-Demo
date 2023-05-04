@@ -4,7 +4,7 @@ import sys
 # sys.path.append('src')
 from undistorter import Undistorter
 from KalmanFilter1D import Kalman1D
-from landmarks import landmarks
+from landmarks_media import landmarks
 from head import PnPHeadPoseEstimator, HeadPoseEstimator
 from face import Face
 from normalization import normalize

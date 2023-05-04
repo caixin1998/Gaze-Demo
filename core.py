@@ -6,18 +6,9 @@ from os import path
 import pickle
 import sys
 import os
-import torch
 
 sys.path.append("src")
-from undistorter import Undistorter
 from KalmanFilter1D import Kalman1D
-import multiprocessing as mp
-# from face import Face
-from landmarks import landmarks
-from head import PnPHeadPoseEstimator
-from normalization import normalize,vector_to_pitchyaw
-#plane_z = -20.0
-#plane_y = -15.0#15.0
 from monitor import monitor
 from process_frame import frame_processor
 from utils import  draw_gaze, to_screen_coordinates

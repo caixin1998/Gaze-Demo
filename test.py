@@ -78,7 +78,8 @@ def get_normalization_image(img_path):
         entry["o_3d"] = o_3d
         normalized_entry = normalize(entry, patch_type = "face")
         cv.imwrite("data/normalized_face%s.png"%id,cv.cvtColor(normalized_entry["patch"].astype(np.uint8), cv.COLOR_RGB2BGR))
-        
+tic = time.time()
 for id in range(1, 7):
     img_path = "data/demo%s.png"%id
     get_normalization_image(img_path)
+print(time.time() - tic)
