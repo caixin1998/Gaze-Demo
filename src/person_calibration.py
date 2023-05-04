@@ -300,13 +300,13 @@ def collect_data(subject, queues, mon, opt, cam_calibs, calib_points=9, rand_poi
 
 
 def fine_tune(opt, data, core, gaze_network, steps=1000):
-
+    if opt.model == 'ployfit':
+        steps = 1
     # collect person calibration data
     gaze_network.load_init_networks()
     subject = opt.subject
     if data is None:
         data = core.process_for_finetune(subject)
-    print(data)
     
     input_dict_train, input_dict_valid = gaze_network.init_input(data)
     #############

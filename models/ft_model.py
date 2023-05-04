@@ -40,12 +40,6 @@ class FTModel(BaseModel):
         """
         parser.set_defaults(dataset_mode='aligned')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
         parser.add_argument('--ckpt_path', type=str, default='weights/eve_face.ckpt', help='parameters path')
-
-        # parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate for SGD')
-        
-        parser.add_argument('--atp_merge', type=str, default="add", help='method for merging for features in hratp.') 
-        parser.add_argument('--patch_size', type=int, default=[56,28,14,7],nargs='+', help='the stirde of the first two 3x3 conv of hrnet48') 
-        parser.add_argument('--hr_stride', type=int, default=[2,2],nargs='+', help='the stirde of the first two 3x3 conv of hrnet48') 
         parser.add_argument('--upsample_size', type=int, default=None, help='upsample size for input faces.') 
         return parser
 
@@ -77,15 +71,10 @@ class FTModel(BaseModel):
         self.criterionLoss = GazeAngularLoss(key_true = "gaze", key_pred="pred")
             # define and initialize optimizers. You can define one optimizer for each network.
             # If two networks are updated at the same time, you can use itertools.chain to group them. See cycle_gan_model.py for an example.
-        self.optimizer = torch.optim.SGD(
-                [p for n, p in self.netG.named_parameters() if n.startswith('gaze_fc')],
-                lr=self.opt.lr,
-            )
-        
-        for n, p in self.netG.named_parameters():
-            if not n.startswith('gaze_fc'):
-                p.requires_grad = False
+     
+        self.optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, self.netG.parameters()), lr = self.opt.lr)
 
+        self.netG.eval()
 
         # self.optimizers = [self.optimizer]
 

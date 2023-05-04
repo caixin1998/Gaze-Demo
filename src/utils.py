@@ -3,7 +3,7 @@
 
 import numpy as np
 import cv2 as cv
-
+import torch
 def get_rect(points , ratio = 1.0): # ratio = w:h
     x = points[:,0]
     y = points[:,1]
@@ -136,3 +136,38 @@ def to_screen_coordinates(origin, direction, rotation, monitor):
 #     image = np.transpose(image, [2, 0, 1])  # CxHxW
 #     image = 2.0 * image / 255.0 - 1
 #     return image
+
+def polyfit(src_x, src_y, order = 1):
+    assert src_x.shape == src_y.shape and src_x.shape[0] > 0 and src_x.shape[1] > 0 and order >= 1
+
+    bias = np.ones((src_x.shape[0], 1), dtype=np.float32)
+    input_x = np.zeros((src_x.shape[0], order*src_x.shape[1]), dtype=np.float32)
+
+    for i in range(1, order+1):
+        copy = np.power(src_x, i)
+        input_x[:, (i-1)*src_x.shape[1]:i*src_x.shape[1]] = copy
+
+    new_mat = np.concatenate((input_x, bias), axis=1)
+    matrix = cv.solve(new_mat, src_y, flags=cv.DECOMP_NORMAL)
+    return matrix[1]
+
+def polymat(src_x, matrix, order = 1):
+    bias = np.ones((src_x.shape[0], 1), dtype=np.float32)
+    input_x = np.zeros((src_x.shape[0], order*src_x.shape[1]), dtype=np.float32)
+    for i in range(1, order+1):
+        copy = np.power(src_x, i)
+        input_x[:, (i-1)*src_x.shape[1]:i*src_x.shape[1]] = copy
+    new_mat = np.concatenate((input_x, bias), axis=1)
+    calibrated = new_mat @ matrix
+    
+    return calibrated
+
+def polymat4tensor(src_x, matrix, order=1):
+    bias = torch.ones(src_x.shape[0], 1)
+    input_x = torch.zeros(src_x.shape[0], order*src_x.shape[1])
+    for i in range(1, order+1):
+        copy = torch.pow(src_x, i)
+        input_x[:, (i-1)*src_x.shape[1]:i*src_x.shape[1]] = copy
+    new_mat = torch.cat((input_x, bias), dim=1)
+    calibrated = torch.mm(new_mat, matrix)
+    return calibrated

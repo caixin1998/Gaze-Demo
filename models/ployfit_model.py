@@ -1,32 +1,15 @@
-"""Model class template
 
-This module provides a template for users to implement custom models.
-You can specify '--model template' to use this model.
-The class name should be consistent with both the filename and its model option.
-The filename should be <model>_dataset.py
-The class name should be <Model>Dataset.py
-It implements a simple image-to-image translation baseline based on regression loss.
-Given input-output pairs (data_A, data_B), it learns a network netG that can minimize the following L1 loss:
-    min_<netG> ||netG(data_A) - data_B||_1
-You need to implement the following functions:
-    <modify_commandline_options>:　Add model-specific options and rewrite default values for existing options.
-    <__init__>: Initialize this model class.
-    <trans_totensor>: Unpack input data and perform data pre-processing.
-    <forward>: Run forward pass. This will be called by both <optimize_parameters> and <test>.
-    <optimize_parameters>: Update network weights; it will be called in every training iteration.
-"""
 import torch
 from .base_model import BaseModel
 from .networks import GazeNetwork
 from .losses import GazeAngularLoss
 import os,sys
-import random
 import numpy as np
-import torchvision
 sys.path.append("../src")
-from utils import calculate_rotation_matrix
-from tensor_utils import vector_to_pitchyaw
-class GDModel(BaseModel):
+from utils import polyfit,polymat4tensor
+
+#linear calibration model
+class PloyFitModel(BaseModel):
     @staticmethod
     def modify_commandline_options(parser):
         """Add new model-specific options and rewrite default values for existing options.
@@ -41,11 +24,9 @@ class GDModel(BaseModel):
         parser.set_defaults(dataset_mode='aligned')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
         parser.add_argument('--ckpt_path', type=str, default='weights/eve_face.ckpt', help='parameters path')
 
-        # parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate for SGD')
-        
-        parser.add_argument('--atp_merge', type=str, default="add", help='method for merging for features in hratp.') 
-        parser.add_argument('--patch_size', type=int, default=[56,28,14,7],nargs='+', help='the stirde of the first two 3x3 conv of hrnet48') 
-        parser.add_argument('--hr_stride', type=int, default=[2,2],nargs='+', help='the stirde of the first two 3x3 conv of hrnet48') 
+        # add order for polyfit,dtype is int
+        parser.add_argument('--order', type=int, default=1, help='order for polyfit')
+       
         parser.add_argument('--upsample_size', type=int, default=None, help='upsample size for input faces.') 
         return parser
 
@@ -71,7 +52,7 @@ class GDModel(BaseModel):
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # define networks; you can use opt.isTrain to specify different behaviors for training and test.
         self.netG  = GazeNetwork(opt).to(self.device)
-
+        self.matrix = None
             # define your loss functions. You can use losses provided by torch.nn such as torch.nn.L1Loss.
             # We also provide a GANLoss class "networks.GANLoss". self.criterionGAN = networks.GANLoss().to(self.device)
         self.criterionLoss = GazeAngularLoss(key_true = "gaze", key_pred="pred")
@@ -82,7 +63,7 @@ class GDModel(BaseModel):
                 lr=self.opt.lr,
             )
 
-        self.shift = None
+   
 
         # self.optimizers = [self.optimizer]
 
@@ -106,19 +87,20 @@ class GDModel(BaseModel):
         
         self.input = self.trans_totensor(input)
         # torchvision.utils.save_image(input['face'], "test.png")
-        
-        self.output = self.netG(self.input)  
-        if self.shift is not None:
-            self.output["pred"] += self.shift
+        self.output = self.netG(self.input) 
+        if self.matrix is not None:
+            output = self.output["pred"]
+            matrix = self.matrix
+            self.output["pred"] = polymat4tensor(output, matrix, order=self.opt.order) 
         self.output["gaze"] = self.output["pred"]
         return self.output
 
+
+        
+
     def backward(self):
         """Calculate losses, gradients, and update network weights; called in every training iteration"""
-        # caculate the intermediate results if necessary; here self.output has been computed during function <forward>
-        # calculate loss given the input and intermediate results
-        self.loss_G = self.criterionLoss(self.input, self.output) 
-        self.loss_G.backward()       # calculate gradients of network G w.r.t. loss_G
+        pass
 
     def optimize_parameters(self,input):
         """Update network weights; it will be called in every training iteration."""
@@ -131,10 +113,12 @@ class GDModel(BaseModel):
             input[k] = v[:,...]
         with torch.no_grad():
             self(input)
-        shift =  input["gaze"] - self.output["pred"]
-        print("shift:", shift)
-        self.shift = torch.mean(shift, dim = 0)[None,...]
-        print("self.shift:", self.shift)
+        output = self.output["pred"]
+        target = input["gaze"]
+        self.matrix = polyfit(output.cpu().data.numpy(), target.cpu().data.numpy(),order=self.opt.order)
+        self.matrix = torch.FloatTensor(self.matrix).to(self.device)
+
+
     def test(self, input):
         with torch.no_grad():
             self(input)
@@ -146,13 +130,19 @@ class GDModel(BaseModel):
         ckpt = torch.load(self.opt.ckpt_path)
         weights = dict([(k[:], v) for k, v in ckpt['state_dict'].items()])
         self.netG.load_state_dict(weights)
+        self.matrix = None
 
-    def load_networks(self):
-        self.load_init_networks()
+    def load_networks(self, subject):
+        save_weight = torch.load('weights/calibration/%s_polyfit.pth.tar' % subject)
+        self.netG.load_state_dict(save_weight["model"])
+        self.matrix = save_weight["matrix"]
 
     def save_networks(self, subject):
-        pass
-        # torch.save(self.netG.state_dict(), 'weights/calibration/%s_faze.pth.tar' % subject) 
+        save_weight = {}
+        state_dict = self.netG.state_dict()
+        save_weight["model"] = state_dict
+        save_weight["matrix"] = self.matrix
+        torch.save(save_weight, 'weights/calibration/%s_polyfit.pth.tar' % subject) 
 
     def convert_input(self, input):
         data = {

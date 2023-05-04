@@ -157,7 +157,7 @@ if __name__ == '__main__':
     if opt.do_finetune or opt.do_collect:
         model = fine_tune(opt, data, core, model, steps = opt.step)
     else:
-        model.load_networks()
+        model.load_networks(subject)
 
 
     #################################
