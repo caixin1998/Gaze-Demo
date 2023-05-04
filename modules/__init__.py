@@ -16,6 +16,7 @@ from .convxnet import convnext_base, convnext_large, convnext_xlarge
 from .iTrackerModel import iTrackerECModel
 from .eye_net import EyeNet
 from .dt_ed import DTED
+from .gazeres18 import GazeRes18, GazeRes50
 
 #from .fsanet_64 import FSANet
 __all__ = [
@@ -49,4 +50,6 @@ __all__ = [
     'iTrackerECModel',
     'EyeNet',
     'DTED',
+    'GazeRes18',
+    'GazeRes50'
 ]

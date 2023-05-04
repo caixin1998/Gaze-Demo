@@ -1,7 +1,7 @@
 
 import torch
 from .base_model import BaseModel
-from .networks import GazeNetwork
+from .networks import GazeRes18
 from .losses import GazeAngularLoss
 import os,sys
 import numpy as np
@@ -22,7 +22,7 @@ class PloyFitModel(BaseModel):
             the modified parser.
         """
         parser.set_defaults(dataset_mode='aligned')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
-        parser.add_argument('--ckpt_path', type=str, default='weights/eve_face.ckpt', help='parameters path')
+        parser.add_argument('--ckpt_path', type=str, default='weights/gazeres18_vipl538.ckpt', help='parameters path')
 
         # add order for polyfit,dtype is int
         parser.add_argument('--order', type=int, default=1, help='order for polyfit')
@@ -51,7 +51,7 @@ class PloyFitModel(BaseModel):
         self.opt = opt
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # define networks; you can use opt.isTrain to specify different behaviors for training and test.
-        self.netG  = GazeNetwork(opt).to(self.device)
+        self.netG  = GazeRes18().to(self.device)
         self.matrix = None
             # define your loss functions. You can use losses provided by torch.nn such as torch.nn.L1Loss.
             # We also provide a GANLoss class "networks.GANLoss". self.criterionGAN = networks.GANLoss().to(self.device)
@@ -124,12 +124,20 @@ class PloyFitModel(BaseModel):
             self(input)
         self.loss_G = self.criterionLoss(self.input, self.output) 
         return self.loss_G
+    
+    def load_ckpt(self, ckpt_path):
+        if os.path.isfile(ckpt_path):
+            print("=> loading checkpoint '{}'".format(ckpt_path))
+            checkpoint = torch.load(ckpt_path)
+            for k, v in list(checkpoint["state_dict"].items()):
+                if k.startswith("netGazeNetwork."):
+                    checkpoint["state_dict"][k[15:]] = v
+                    del checkpoint["state_dict"][k]
+            self.netG.load_state_dict(checkpoint["state_dict"])
 
     def load_init_networks(self):
         assert os.path.isfile(self.opt.ckpt_path)
-        ckpt = torch.load(self.opt.ckpt_path)
-        weights = dict([(k[:], v) for k, v in ckpt['state_dict'].items()])
-        self.netG.load_state_dict(weights)
+        self.load_ckpt(self.opt.ckpt_path)
         self.matrix = None
 
     def load_networks(self, subject):

@@ -15,17 +15,17 @@ You need to implement the following functions:
     <forward>: Run forward pass. This will be called by both <optimize_parameters> and <test>.
     <optimize_parameters>: Update network weights; it will be called in every training iteration.
 """
+from collections import OrderedDict
 import torch
+from torch import Tensor
 from .base_model import BaseModel
-from .networks import GazeNetwork
+from .networks import GazeRes18
 from .losses import GazeAngularLoss
 import os,sys
 import random
 import numpy as np
-import torchvision
 sys.path.append("../src")
-from utils import calculate_rotation_matrix
-from tensor_utils import vector_to_pitchyaw
+
 class FTModel(BaseModel):
     @staticmethod
     def modify_commandline_options(parser):
@@ -39,7 +39,7 @@ class FTModel(BaseModel):
             the modified parser.
         """
         parser.set_defaults(dataset_mode='aligned')  # You can rewrite default values for this model. For example, this model usually uses aligned dataset as its dataset.
-        parser.add_argument('--ckpt_path', type=str, default='weights/eve_face.ckpt', help='parameters path')
+        parser.add_argument('--ckpt_path', type=str, default='weights/gazeres18_vipl538.ckpt', help='parameters path')
         parser.add_argument('--upsample_size', type=int, default=None, help='upsample size for input faces.') 
         return parser
 
@@ -64,7 +64,7 @@ class FTModel(BaseModel):
         self.opt = opt
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         # define networks; you can use opt.isTrain to specify different behaviors for training and test.
-        self.netG  = GazeNetwork(opt).to(self.device)
+        self.netG  = GazeRes18().to(self.device)
 
             # define your loss functions. You can use losses provided by torch.nn such as torch.nn.L1Loss.
             # We also provide a GANLoss class "networks.GANLoss". self.criterionGAN = networks.GANLoss().to(self.device)
@@ -143,21 +143,25 @@ class FTModel(BaseModel):
             self(input)
         self.loss_G = self.criterionLoss(self.input, self.output) 
         return self.loss_G
-
+    
+    def load_ckpt(self, ckpt_path):
+        if os.path.isfile(ckpt_path):
+            print("=> loading checkpoint '{}'".format(ckpt_path))
+            checkpoint = torch.load(ckpt_path)
+            for k, v in list(checkpoint["state_dict"].items()):
+                if k.startswith("netGazeNetwork."):
+                    checkpoint["state_dict"][k[15:]] = v
+                    del checkpoint["state_dict"][k]
+            self.netG.load_state_dict(checkpoint["state_dict"])
+        
     def load_init_networks(self):
         assert os.path.isfile(self.opt.ckpt_path)
-        ckpt = torch.load(self.opt.ckpt_path)
-        print("> Loading:",self.opt.ckpt_path)
-        weights = dict([(k[:], v) for k, v in ckpt['state_dict'].items()])
-        self.netG.load_state_dict(weights)
+        self.load_ckpt(self.opt.ckpt_path)
         
-    def load_networks(self):
-        load_path = os.path.join(self.opt.cal_weight_path, '%s'%(self.opt.subject),self.opt.ckpt_path.split('/')[-1])
-        
+    def load_networks(self, subject):
+        load_path = os.path.join(self.opt.cal_weight_path, '%s'%(subject),self.opt.ckpt_path.split('/')[-1])
         if os.path.isfile(load_path):
-            ted_weights = torch.load(load_path)
-            self.netG.load_state_dict(ted_weights)
-            print("> Loading:",load_path)
+            self.load_ckpt(load_path)
         else:
             self.load_init_networks()
 
